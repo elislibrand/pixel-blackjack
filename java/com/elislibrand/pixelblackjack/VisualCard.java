@@ -5,17 +5,15 @@ import java.awt.Image;
 public class VisualCard
 {
     private Image image;
-    //private int indexInArrayList;
     private int x;
     private int y;
     private boolean isRotated;
 
-    public VisualCard(Image image, /* int indexInArrayList, */ int xPos, int yPos, boolean isRotated)
+    public VisualCard(Image image, int x, int y, boolean isRotated)
     {
         this.image = image;
-        //this.indexInArrayList = indexInArrayList;
-        this.x = xPos;
-        this.y = yPos;
+        this.x = x;
+        this.y = y;
         this.isRotated = isRotated;
     }
 
@@ -29,33 +27,28 @@ public class VisualCard
         this.image = image;
     }
 
-    /*public int getIndexInArrayList()
-    {
-        return indexInArrayList;
-    }*/
-
     public boolean isRotated()
     {
         return isRotated;
     }
 
-    public int getXPos()
+    public int getX()
     {
         return x;
     }
 
-    public void setXPos(int xPos)
+    public void setX(int x)
     {
-        this.x = xPos;
+        this.x = x;
     }
 
-    public int getYPos()
+    public int getY()
     {
         return y;
     }
 
-    public void setYPos(int yPos)
+    public void setY(int y)
     {
-        this.y = yPos;
+        this.y = y;
     }
 }

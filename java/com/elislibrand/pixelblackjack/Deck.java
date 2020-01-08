@@ -10,6 +10,7 @@ import javax.swing.ImageIcon;
 public class Deck
 {
     private List<Card> cards = new ArrayList<Card>();
+    private List<Integer> visualCardIndexes = new ArrayList<Integer>();
 
     private boolean hasBlackjack = false;
     private boolean hasBusted = false;
@@ -66,14 +67,37 @@ public class Deck
 
     public void drawCardFromDeck(Deck deck)
     {
-        this.cards.add(deck.getCard(0));
+        cards.add(deck.getCard(0));
         deck.removeCard(0);
     }
 
-    public void giveLastCardToDeck(Deck deck)
+    public void addVisualCardIndex(int index)
     {
-        deck.cards.add(this.getCard(1));
-        this.removeCard(1);
+        visualCardIndexes.add(index);
+    }
+
+    public int getVisualCardIndex(int cardIndex)
+    {
+        return visualCardIndexes.get(cardIndex);
+    }
+
+    private void removeVisualCardIndex(int index)
+    {
+        visualCardIndexes.remove(index);
+    }
+
+    public void moveLastCardToDeck(Deck deck) // REMAKE
+    {
+        deck.cards.add(getCard(1));
+        removeCard(1);
+    }
+
+    public void moveLastVisualCardIndexToDeck(Deck deck)
+    {
+        int lastVisualCardIndex = visualCardIndexes.size() - 1;
+
+        deck.visualCardIndexes.add(lastVisualCardIndex);
+        removeVisualCardIndex(lastVisualCardIndex);
     }
 
     public int getDeckSize()
@@ -214,11 +238,13 @@ public class Deck
         this.hasDoubledDown = hasDoubledDown;
     }
 
-    public void resetBooleans()
+    public void reset()
     {
         hasBlackjack = false;
         hasBusted = false;
         hasDoubledDown = false;
         isInitiated = false;
+
+        visualCardIndexes.clear();
     }
 }

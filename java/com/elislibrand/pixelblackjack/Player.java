@@ -324,7 +324,7 @@ public class Player
     {
         for (Deck deck : decks)
         {
-            deck.resetBooleans();
+            deck.reset();
         }
 
         activeDeckIndex = getMaxNumberOfSplitDecks() / 2 - 1;
