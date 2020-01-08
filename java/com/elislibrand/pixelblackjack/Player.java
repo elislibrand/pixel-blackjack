@@ -214,9 +214,12 @@ public class Player
     {
         for (Deck deck : decks)
         {
-            if (!deck.hasBlackjack())
+            if (deck.isInitiated())
             {
-                return false;
+                if (!deck.hasBlackjack())
+                {
+                    return false;
+                }
             }
         }
 
@@ -259,9 +262,12 @@ public class Player
     {
         for (Deck deck : decks)
         {
-            if (!deck.hasBusted())
+            if (deck.isInitiated())
             {
-                return false;
+                if (!deck.hasBusted())
+                {
+                    return false;
+                }
             }
         }
 
