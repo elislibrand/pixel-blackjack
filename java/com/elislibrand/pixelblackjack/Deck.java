@@ -88,8 +88,8 @@ public class Deck
 
     public void moveLastCardToDeck(Deck deck) // REMAKE
     {
-        deck.cards.add(getCard(1));
-        removeCard(1);
+        deck.cards.add(getCard(cards.size() - 1));
+        removeCard(cards.size() - 1);
     }
 
     public void moveLastVisualCardIndexToDeck(Deck deck)
@@ -105,19 +105,16 @@ public class Deck
         return this.cards.size();
     }
 
-    public void moveAllToDeck(Deck deckToMoveTo)
+    public void moveAllToDeck(Deck deckToMoveTo) // MAYBE SOMETHING WRONG HERE!!!
     {
-        int thisDeckSize = this.cards.size();
-
-        for (int i = 0; i < thisDeckSize; i++)
+        for (int i = 0; i < cards.size(); i++)
         {
-            deckToMoveTo.addCard(this.getCard(i));
+            deckToMoveTo.addCard(getCard(i));
+            deckToMoveTo.addVisualCardIndex(visualCardIndexes.get(i));
         }
 
-        for (int i = 0; i < thisDeckSize; i++)
-        {
-            this.removeCard(0);
-        }
+        cards.clear();
+        visualCardIndexes.clear();
     }
 
     public int getValueOfCards()

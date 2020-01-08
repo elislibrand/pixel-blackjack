@@ -320,6 +320,10 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
+    private int splitDirection;
+    private int splitIndexToMoveTo;
+    private int movesNeeded;
+
     private void split()
     {
         if (!animator.isPlaying())
@@ -329,30 +333,40 @@ public class GamePanel extends JPanel implements Runnable
                 case 0:
                     initiateSplit();
 
-                    int upperVisualCardIndex = player.getDeck(player.getActiveDeckIndex()).getVisualCardIndex(1);
-                    moveSplitCard(player.getActiveDeckIndex() + getSplitDirection(), upperVisualCardIndex);
+                    if (movesNeeded > 0)
+                    {
+                        // Shift cards
+                        
+                        shiftSplitCards();
 
-                    player.getDeck(player.getActiveDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getActiveDeckIndex() + getSplitDirection()));
+                        movesNeeded--;
+                    }
 
+                    break;
+                case 1:
+                    int upperVisualCardIndex = player.getDeck(player.getActiveDeckIndex() + splitDirection).getVisualCardIndex(0); //Otydligt eftersom kortet redan är flyttat till en annan deck
+                    System.out.println("Upper visual card index: " + upperVisualCardIndex);
+                    moveSplitCard(player.getActiveDeckIndex() + splitDirection, upperVisualCardIndex);
+                    
                     if (player.getNumberOfActiveDecks() > 2)
                     {
                         splitStageIndex++;
                     }
 
                     break;
-                case 1:
+                case 2:
                     int lowerVisualCardIndex = player.getDeck(player.getActiveDeckIndex()).getVisualCardIndex(0);
                     moveSplitCard(player.getActiveDeckIndex(), lowerVisualCardIndex);
 
                     break;
-                case 2:
-                    drawCard(player.getDeck(player.getActiveDeckIndex() + getSplitDirection()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex() + getSplitDirection()), false, false);
-                    break;
                 case 3:
-                    drawCard(player.getDeck(player.getActiveDeckIndex()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex()), false, false);
+                    drawCard(player.getDeck(player.getActiveDeckIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getActiveDeckIndex() + splitDirection), false, false);
                     break;
                 case 4:
-                    if (getSplitDirection() == 1)
+                    drawCard(player.getDeck(player.getActiveDeckIndex()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex()), false, false);
+                    break;
+                case 5:
+                    if (splitDirection == 1)
                     {
                         player.incrementActiveDeckIndex();
                     }
@@ -363,18 +377,28 @@ public class GamePanel extends JPanel implements Runnable
                     break;
             }
 
-            splitStageIndex++;
+            if (movesNeeded == 0)
+            {
+                splitStageIndex++;
+            }
         }
     }
 
-    private void initiateSplit() // Needs to be changed for multiple splits
+    private void initiateSplit()
     {
         doubleBet();
 
         player.incrementNumberOfActiveDecks();
 
-        player.getDeck(player.getActiveDeckIndex() + getSplitDirection()).initiate();
-        player.getDeck(player.getActiveDeckIndex()).moveLastCardToDeck(player.getDeck((player.getActiveDeckIndex() + getSplitDirection())));
+        splitDirection = getSplitDirection();
+        splitIndexToMoveTo = getSplitIndexToMoveTo();
+
+        movesNeeded = Math.abs(player.getActiveDeckIndex() - splitIndexToMoveTo) - 1; // Forska "- 1", kan vara fel
+        System.out.println("Moves needed: " + movesNeeded);
+
+        player.getDeck(player.getActiveDeckIndex() + splitDirection).initiate(); // + movesNeeded ?
+        player.getDeck(player.getActiveDeckIndex()).moveLastCardToDeck(player.getDeck(player.getActiveDeckIndex() + splitDirection));
+        player.getDeck(player.getActiveDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getActiveDeckIndex() + splitDirection));
     }
 
     private int getSplitDirection()
@@ -386,12 +410,56 @@ public class GamePanel extends JPanel implements Runnable
 
         if (player.getActiveDeckIndex() > (player.getMaxNumberOfSplitDecks() / 2) - 1)
         {
-            return 1;
+            for (int i = player.getActiveDeckIndex() + 1; i < player.getMaxNumberOfSplitDecks(); i++) 
+            {
+
+                if (!player.getDeck(i).isInitiated())
+                {
+                    return 1;
+                }
+            }
+
+            return -1;
         }
         else
         {
-            return -1;
+            for (int i = player.getActiveDeckIndex() - 1; i >= 0; i--)
+            {
+
+                if (!player.getDeck(i).isInitiated())
+                {
+                    return -1;
+                }
+            }
+
+            return 1;
         }
+    }
+
+    private int getSplitIndexToMoveTo()
+    {
+        for (int i = player.getActiveDeckIndex() + splitDirection; shouldStopSearchingForSplitIndexToMoveTo(i); i += splitDirection)
+        {
+            if (!player.getDeck(i).isInitiated())
+            {
+                System.out.println("Empty slot at index: " + i);
+                
+                return i;
+            }
+        }
+        
+        System.out.println("You fucked up!");
+        return -1;
+    }
+
+    private boolean shouldStopSearchingForSplitIndexToMoveTo(int index)
+    {
+        if (splitDirection == 1)
+        {
+            return index < player.getMaxNumberOfSplitDecks();
+        }
+
+        return index >= 0;
     }
 
     private void moveSplitCard(int deckIndex, int visualCardIndex)
@@ -403,6 +471,52 @@ public class GamePanel extends JPanel implements Runnable
 
         animator.start(startingPos, destinationPos, visualCardIndex);
         audioManager.play(Audio.CARD_SLIDE);
+    }
+
+    private void shiftSplitCards()
+    {
+        if (splitDirection == 1)
+        {
+            int deckToMoveIndex = player.getActiveDeckIndex() + movesNeeded;
+
+            player.getDeck(deckToMoveIndex).moveAllToDeck(player.getDeck(deckToMoveIndex + 1));
+            
+            if (!player.getDeck(deckToMoveIndex + 1).isInitiated())
+            {
+                player.getDeck(deckToMoveIndex + 1).initiate();
+            }
+            
+            for (int i = 0; i < player.getDeck(deckToMoveIndex + 1).getDeckSize(); i++)
+            {
+                int visualCardIndex = player.getDeck(deckToMoveIndex + 1).getVisualCardIndex(i);
+
+                Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
+                Point destinationPos = new Point(startingPos.x + splitOffsetX, startingPos.y);
+
+                animator.start(startingPos, destinationPos, visualCardIndex);
+            }
+        }
+        else
+        {
+            int deckToMoveIndex = player.getActiveDeckIndex() - movesNeeded;
+
+            player.getDeck(deckToMoveIndex).moveAllToDeck(player.getDeck(deckToMoveIndex - 1));
+            
+            if (!player.getDeck(deckToMoveIndex - 1).isInitiated())
+            {
+                player.getDeck(deckToMoveIndex - 1).initiate();
+            }
+            
+            for (int i = 0; i < player.getDeck(deckToMoveIndex - 1).getDeckSize(); i++)
+            {
+                int visualCardIndex = player.getDeck(deckToMoveIndex - 1).getVisualCardIndex(i);
+
+                Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
+                Point destinationPos = new Point(startingPos.x - splitOffsetX, startingPos.y);
+
+                animator.start(startingPos, destinationPos, visualCardIndex);
+            }
+        }
     }
 
     private boolean canDoubleDown()
@@ -759,6 +873,8 @@ public class GamePanel extends JPanel implements Runnable
             }
         }
 
+        int count = 0;
+
         for (VisualCard visualCard : visualCards)
         {   
             if (visualCard.isRotated())
@@ -777,7 +893,11 @@ public class GamePanel extends JPanel implements Runnable
             {
                 g2d.drawImage(cardShadow, visualCard.getX() - scale, visualCard.getY() - scale, cardShadowSize.width, cardShadowSize.height, null);
                 g2d.drawImage(visualCard.getImage(), visualCard.getX(), visualCard.getY(), cardSize.width, cardSize.height, null);
+
+                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
             }
+
+            count++;
         }
 
         for (VisualChip visualChip : visualChips)
@@ -958,17 +1078,17 @@ public class GamePanel extends JPanel implements Runnable
     {
         private boolean isPlaying = false;
 
-        private Point startingPos;
-        private Point destinationPos;
-        private Point currentPos;
+        private List<Point> startingPositions = new ArrayList<Point>();
+        private List<Point> destinationPositions = new ArrayList<Point>();
+        private List<Point> currentPositions = new ArrayList<Point>();
         private double newPosX;
         private double newPosY;
 
-        private int indexInArrayList;
+        private List<Integer> indexesInArrayList = new ArrayList<Integer>();
 
         private int count;
         private double progress;
-        private double durationInSeconds = 0.435;
+        private double durationInSeconds = 0.29/* 0.435 */;
 
         public boolean isPlaying()
         {
@@ -984,24 +1104,40 @@ public class GamePanel extends JPanel implements Runnable
                     count++;
                     progress = count / (durationInSeconds * Screen.REFRESH_RATE);
                 }
-                
-                if (!isCloseToDestination())
-                {
-                    newPosX = easeInOut((float)(progress * durationInSeconds), startingPos.x, getDistance().x, (float)durationInSeconds);
-                    newPosY = easeInOut((float)(progress * durationInSeconds), startingPos.y, getDistance().y, (float)durationInSeconds);
-                
-                    currentPos.setLocation((int)newPosX, (int)newPosY);
 
-                    visualCards.get(indexInArrayList).setX(currentPos.x);
-                    visualCards.get(indexInArrayList).setY(currentPos.y);
-                }
-                else
+                for (int i = 0; i < startingPositions.size(); i++)
                 {
-                    currentPos.setLocation(destinationPos);
+                    if (!isCloseToDestination())
+                    {
+                        newPosX = easeInOut((float)(progress * durationInSeconds), startingPositions.get(i).x, getDistance(i).x, (float)durationInSeconds);
+                        newPosY = easeInOut((float)(progress * durationInSeconds), startingPositions.get(i).y, getDistance(i).y, (float)durationInSeconds);
+                    
+                        currentPositions.get(i).setLocation((int)newPosX, (int)newPosY);
+    
+                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
+                        visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
+                    }
+                    else
+                    {
+                        currentPositions.get(i).setLocation(destinationPositions.get(i));
 
-                    isPlaying = false;
+                        if (i == startingPositions.size() - 1)
+                        {
+                            isPlaying = false;
+                            
+                            clearArrayLists();
+                        }
+                    }
                 }
             }
+        }
+
+        private void clearArrayLists()
+        {
+            startingPositions.clear();
+            destinationPositions.clear();
+            currentPositions.clear();
+            indexesInArrayList.clear();
         }
 
         public void start(Point startingPos, Point destinationPos, int indexInArrayList)
@@ -1009,11 +1145,11 @@ public class GamePanel extends JPanel implements Runnable
             count = 0;
             progress = 0;
 
-            this.startingPos = new Point(startingPos.x, startingPos.y);
-            this.destinationPos = new Point(destinationPos.x, destinationPos.y); // destinationPos !!
-            currentPos = new Point(startingPos.x, startingPos.y);
+            startingPositions.add(new Point(startingPos.x, startingPos.y));
+            destinationPositions.add(new Point(destinationPos.x, destinationPos.y));
+            currentPositions.add(new Point(startingPos.x, startingPos.y));
 
-            this.indexInArrayList = indexInArrayList;
+            indexesInArrayList.add(indexInArrayList);
 
             isPlaying = true;
         }
@@ -1033,9 +1169,9 @@ public class GamePanel extends JPanel implements Runnable
             return progress >= 1;
         }
 
-        private Point getDistance()
+        private Point getDistance(int index)
         {
-            return new Point(destinationPos.x - startingPos.x, destinationPos.y - startingPos.y);
+            return new Point(destinationPositions.get(index).x - startingPositions.get(index).x, destinationPositions.get(index).y - startingPositions.get(index).y);
         }
     }
 }
