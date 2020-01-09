@@ -863,7 +863,7 @@ public class GamePanel extends JPanel implements Runnable
         if (debugMode)
         {
             g.setColor(Color.WHITE);
-            g.drawString("Pixel Blackjack v2.1.1 [major restructuring and cleaning up]", 12, 24);
+            g.drawString("Pixel Blackjack v2.2.0 [multiple splits added and major bug fixes]", 12, 24);
             g.drawString("Player chips: " + player.getChips(), 12, 48);
             g.drawString("Player bet: " + player.getBet(), 12, 72);
             g.drawString("Player winnings: " + player.getWinnings(), 12, 96);
@@ -872,6 +872,15 @@ public class GamePanel extends JPanel implements Runnable
             for (int i = 0; i < player.getMaxNumberOfSplitDecks(); i++)
             {
                 g2d.drawRect(splitMarginX + (i * splitOffsetX), playerCardStartingPos.y, cardSize.width, cardSize.height);
+            }
+
+            int count = 0;
+
+            for (VisualCard visualCard : visualCards)
+            {
+                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
+
+                count++;
             }
         }
 
@@ -901,8 +910,6 @@ public class GamePanel extends JPanel implements Runnable
             }
         }
 
-        int count = 0;
-
         for (VisualCard visualCard : visualCards)
         {   
             if (visualCard.isRotated())
@@ -921,11 +928,7 @@ public class GamePanel extends JPanel implements Runnable
             {
                 g2d.drawImage(cardShadow, visualCard.getX() - scale, visualCard.getY() - scale, cardShadowSize.width, cardShadowSize.height, null);
                 g2d.drawImage(visualCard.getImage(), visualCard.getX(), visualCard.getY(), cardSize.width, cardSize.height, null);
-            }
-
-            g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
-
-            count++;
+            }            
         }
 
         for (VisualChip visualChip : visualChips)
@@ -1116,7 +1119,7 @@ public class GamePanel extends JPanel implements Runnable
 
         private int count;
         private double progress;
-        private double durationInSeconds = 0.29/* 0.435 */;
+        private double durationInSeconds = 0.435;
 
         public boolean isPlaying()
         {
