@@ -320,6 +320,10 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
+    private int splitDirection;
+    private int splitIndexToMoveTo;
+    private int movesNeeded;
+
     private void split()
     {
         if (!animator.isPlaying())
@@ -329,10 +333,25 @@ public class GamePanel extends JPanel implements Runnable
                 case 0:
                     initiateSplit();
 
-                    int upperVisualCardIndex = player.getDeck(player.getActiveDeckIndex()).getVisualCardIndex(1);
-                    moveSplitCard(player.getActiveDeckIndex() + getSplitDirection(), upperVisualCardIndex);
+                    break;
+                case 1:
+                    if (movesNeeded > 0)
+                    {
+                        // Shift cards
+                        
+                        //shiftSplitCards();
+                        System.out.println("Moving card!");
 
-                    player.getDeck(player.getActiveDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getActiveDeckIndex() + getSplitDirection()));
+                        movesNeeded--;
+                        splitStageIndex--;
+                    }
+
+                    break;
+                case 2:
+                    int upperVisualCardIndex = player.getDeck(player.getActiveDeckIndex()).getVisualCardIndex(1);
+                    moveSplitCard(player.getActiveDeckIndex() + splitDirection, upperVisualCardIndex);
+
+                    player.getDeck(player.getActiveDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getActiveDeckIndex() + splitDirection));
 
                     if (player.getNumberOfActiveDecks() > 2)
                     {
@@ -340,19 +359,19 @@ public class GamePanel extends JPanel implements Runnable
                     }
 
                     break;
-                case 1:
+                case 3:
                     int lowerVisualCardIndex = player.getDeck(player.getActiveDeckIndex()).getVisualCardIndex(0);
                     moveSplitCard(player.getActiveDeckIndex(), lowerVisualCardIndex);
 
                     break;
-                case 2:
-                    drawCard(player.getDeck(player.getActiveDeckIndex() + getSplitDirection()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex() + getSplitDirection()), false, false);
+                case 4:
+                    drawCard(player.getDeck(player.getActiveDeckIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getActiveDeckIndex() + splitDirection), false, false);
                     break;
-                case 3:
+                case 5:
                     drawCard(player.getDeck(player.getActiveDeckIndex()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex()), false, false);
                     break;
-                case 4:
-                    if (getSplitDirection() == 1)
+                case 6:
+                    if (splitDirection == 1)
                     {
                         player.incrementActiveDeckIndex();
                     }
@@ -373,8 +392,16 @@ public class GamePanel extends JPanel implements Runnable
 
         player.incrementNumberOfActiveDecks();
 
-        player.getDeck(player.getActiveDeckIndex() + getSplitDirection()).initiate();
-        player.getDeck(player.getActiveDeckIndex()).moveLastCardToDeck(player.getDeck((player.getActiveDeckIndex() + getSplitDirection())));
+        splitDirection = getSplitDirection();
+        System.out.println("\nDirection of split: " + splitDirection);
+        splitIndexToMoveTo = getSplitIndexToMoveTo();
+        System.out.println("Empty slot at index: " + splitIndexToMoveTo);
+
+        movesNeeded = Math.abs(player.getActiveDeckIndex() - splitIndexToMoveTo) - 1; // Forska "- 1", kan vara fel
+        System.out.println("Moves needed: " + movesNeeded);
+
+        player.getDeck(player.getActiveDeckIndex() + splitDirection).initiate();
+        player.getDeck(player.getActiveDeckIndex()).moveLastCardToDeck(player.getDeck((player.getActiveDeckIndex() + splitDirection)));
     }
 
     private int getSplitDirection()
@@ -386,12 +413,62 @@ public class GamePanel extends JPanel implements Runnable
 
         if (player.getActiveDeckIndex() > (player.getMaxNumberOfSplitDecks() / 2) - 1)
         {
+            for (int i = player.getActiveDeckIndex() + 1; i < player.getMaxNumberOfSplitDecks(); i++) 
+            {
+
+                if (!player.getDeck(i).isInitiated())
+                {
+                    return 1;
+                }
+            }
+
+            return -1;
+        }
+        else
+        {
+            for (int i = player.getActiveDeckIndex() - 1; i >= 0; i--)
+            {
+
+                if (!player.getDeck(i).isInitiated())
+                {
+                    return -1;
+                }
+            }
+
+            return 1;
+        }
+
+        /* if (player.getActiveDeckIndex() > (player.getMaxNumberOfSplitDecks() / 2) - 1)
+        {
             return 1;
         }
         else
         {
             return -1;
+        } */
+    }
+
+    private int getSplitIndexToMoveTo()
+    {
+        for (int i = player.getActiveDeckIndex() + splitDirection; shouldStopSearchingForSplitIndexToMoveTo(i); i += splitDirection)
+        {
+            if (!player.getDeck(i).isInitiated())
+            {
+                return i;
+            }
         }
+        
+        return -1;
+    }
+
+    private boolean shouldStopSearchingForSplitIndexToMoveTo(int index)
+    {
+        if (splitDirection == 1)
+        {
+            return index < player.getMaxNumberOfSplitDecks();
+        }
+
+        return index >= 0;
     }
 
     private void moveSplitCard(int deckIndex, int visualCardIndex)
@@ -958,17 +1035,17 @@ public class GamePanel extends JPanel implements Runnable
     {
         private boolean isPlaying = false;
 
-        private Point startingPos;
-        private Point destinationPos;
-        private Point currentPos;
+        private List<Point> startingPositions = new ArrayList<Point>();
+        private List<Point> destinationPositions = new ArrayList<Point>();
+        private List<Point> currentPositions = new ArrayList<Point>();
         private double newPosX;
         private double newPosY;
 
-        private int indexInArrayList;
+        private List<Integer> indexesInArrayList = new ArrayList<Integer>();
 
         private int count;
         private double progress;
-        private double durationInSeconds = 0.435;
+        private double durationInSeconds = 0.29/* 0.435 */;
 
         public boolean isPlaying()
         {
@@ -984,24 +1061,40 @@ public class GamePanel extends JPanel implements Runnable
                     count++;
                     progress = count / (durationInSeconds * Screen.REFRESH_RATE);
                 }
-                
-                if (!isCloseToDestination())
-                {
-                    newPosX = easeInOut((float)(progress * durationInSeconds), startingPos.x, getDistance().x, (float)durationInSeconds);
-                    newPosY = easeInOut((float)(progress * durationInSeconds), startingPos.y, getDistance().y, (float)durationInSeconds);
-                
-                    currentPos.setLocation((int)newPosX, (int)newPosY);
 
-                    visualCards.get(indexInArrayList).setX(currentPos.x);
-                    visualCards.get(indexInArrayList).setY(currentPos.y);
-                }
-                else
+                for (int i = 0; i < startingPositions.size(); i++)
                 {
-                    currentPos.setLocation(destinationPos);
+                    if (!isCloseToDestination())
+                    {
+                        newPosX = easeInOut((float)(progress * durationInSeconds), startingPositions.get(i).x, getDistance(i).x, (float)durationInSeconds);
+                        newPosY = easeInOut((float)(progress * durationInSeconds), startingPositions.get(i).y, getDistance(i).y, (float)durationInSeconds);
+                    
+                        currentPositions.get(i).setLocation((int)newPosX, (int)newPosY);
+    
+                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
+                        visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
+                    }
+                    else
+                    {
+                        currentPositions.get(i).setLocation(destinationPositions.get(i));
 
-                    isPlaying = false;
+                        if (i == startingPositions.size() - 1)
+                        {
+                            isPlaying = false;
+                            
+                            clearArrayLists();
+                        }
+                    }
                 }
             }
+        }
+
+        private void clearArrayLists()
+        {
+            startingPositions.clear();
+            destinationPositions.clear();
+            currentPositions.clear();
+            indexesInArrayList.clear();
         }
 
         public void start(Point startingPos, Point destinationPos, int indexInArrayList)
@@ -1009,11 +1102,11 @@ public class GamePanel extends JPanel implements Runnable
             count = 0;
             progress = 0;
 
-            this.startingPos = new Point(startingPos.x, startingPos.y);
-            this.destinationPos = new Point(destinationPos.x, destinationPos.y); // destinationPos !!
-            currentPos = new Point(startingPos.x, startingPos.y);
+            startingPositions.add(new Point(startingPos.x, startingPos.y));
+            destinationPositions.add(new Point(destinationPos.x, destinationPos.y));
+            currentPositions.add(new Point(startingPos.x, startingPos.y));
 
-            this.indexInArrayList = indexInArrayList;
+            indexesInArrayList.add(indexInArrayList);
 
             isPlaying = true;
         }
@@ -1033,9 +1126,9 @@ public class GamePanel extends JPanel implements Runnable
             return progress >= 1;
         }
 
-        private Point getDistance()
+        private Point getDistance(int index)
         {
-            return new Point(destinationPos.x - startingPos.x, destinationPos.y - startingPos.y);
+            return new Point(destinationPositions.get(index).x - startingPositions.get(index).x, destinationPositions.get(index).y - startingPositions.get(index).y);
         }
     }
 }
