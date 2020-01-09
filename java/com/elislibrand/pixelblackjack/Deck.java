@@ -94,10 +94,11 @@ public class Deck
 
     public void moveLastVisualCardIndexToDeck(Deck deck)
     {
-        int lastVisualCardIndex = visualCardIndexes.size() - 1;
+        int lastVisualCardIndex = visualCardIndexes.get(visualCardIndexes.size() - 1);
+        System.out.println("Upper card VC index: " + lastVisualCardIndex);
 
         deck.visualCardIndexes.add(lastVisualCardIndex);
-        removeVisualCardIndex(lastVisualCardIndex);
+        removeVisualCardIndex(visualCardIndexes.size() - 1);
     }
 
     public int getDeckSize()

@@ -335,11 +335,13 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case 1:
+                    System.out.println("\nMoves needed in case 1: " + movesNeeded);
+
                     if (movesNeeded > 0)
                     {
                         // Shift cards
                         
-                        //shiftSplitCards();
+                        shiftSplitCards();
                         System.out.println("Moving card!");
 
                         movesNeeded--;
@@ -350,8 +352,6 @@ public class GamePanel extends JPanel implements Runnable
                 case 2:
                     int upperVisualCardIndex = player.getDeck(player.getActiveDeckIndex()).getVisualCardIndex(1);
                     moveSplitCard(player.getActiveDeckIndex() + splitDirection, upperVisualCardIndex);
-
-                    player.getDeck(player.getActiveDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getActiveDeckIndex() + splitDirection));
 
                     if (player.getNumberOfActiveDecks() > 2)
                     {
@@ -365,18 +365,27 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case 4:
-                    drawCard(player.getDeck(player.getActiveDeckIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getActiveDeckIndex() + splitDirection), false, false);
+                    player.getDeck(player.getActiveDeckIndex() + splitDirection).initiate();
+                    player.getDeck(player.getActiveDeckIndex()).moveLastCardToDeck(player.getDeck((player.getActiveDeckIndex() + splitDirection)));
+                    player.getDeck(player.getActiveDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getActiveDeckIndex() + splitDirection));
+
                     break;
                 case 5:
-                    drawCard(player.getDeck(player.getActiveDeckIndex()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex()), false, false);
+                    drawCard(player.getDeck(player.getActiveDeckIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getActiveDeckIndex() + splitDirection), false, false);
+                    
                     break;
                 case 6:
+                    drawCard(player.getDeck(player.getActiveDeckIndex()), getNextSplitPlayerCardPosition(player.getActiveDeckIndex()), false, false);
+                    
+                    break;
+                case 7:
                     if (splitDirection == 1)
                     {
                         player.incrementActiveDeckIndex();
                     }
 
                     gameState = GameState.PLAYER_CHOOSE;
+                    
                     break;
                 default:
                     break;
@@ -400,8 +409,29 @@ public class GamePanel extends JPanel implements Runnable
         movesNeeded = Math.abs(player.getActiveDeckIndex() - splitIndexToMoveTo) - 1; // Forska "- 1", kan vara fel
         System.out.println("Moves needed: " + movesNeeded);
 
-        player.getDeck(player.getActiveDeckIndex() + splitDirection).initiate();
-        player.getDeck(player.getActiveDeckIndex()).moveLastCardToDeck(player.getDeck((player.getActiveDeckIndex() + splitDirection)));
+        try
+        {
+            int count = 0;
+
+            for (Deck deck : player.getDecks())
+            {
+                if (deck.isInitiated())
+                {
+                    System.out.println("\nDeck number " + count);
+
+                    for (int i = 0; i < deck.getDeckSize(); i++)
+                    {
+                        System.out.println("VC Index: " + deck.getVisualCardIndex(i));
+                    }
+                }
+
+                count++;
+            }
+        }
+        catch (IndexOutOfBoundsException e)
+        {
+            System.out.println("\nIndexOutOfBoundsException!");
+        }
     }
 
     private int getSplitDirection()
@@ -437,15 +467,6 @@ public class GamePanel extends JPanel implements Runnable
 
             return 1;
         }
-
-        /* if (player.getActiveDeckIndex() > (player.getMaxNumberOfSplitDecks() / 2) - 1)
-        {
-            return 1;
-        }
-        else
-        {
-            return -1;
-        } */
     }
 
     private int getSplitIndexToMoveTo()
@@ -480,6 +501,50 @@ public class GamePanel extends JPanel implements Runnable
 
         animator.start(startingPos, destinationPos, visualCardIndex);
         audioManager.play(Audio.CARD_SLIDE);
+    }
+
+    private void shiftSplitCards()
+    {
+        int deckToShiftIndex;
+
+        if (splitDirection == 1)
+        {
+            deckToShiftIndex = player.getActiveDeckIndex() + movesNeeded;
+            
+            System.out.println("Deck " + deckToShiftIndex + " size: " + player.getDeck(deckToShiftIndex).getDeckSize());
+
+            for (int i = 0; i < player.getDeck(deckToShiftIndex).getDeckSize(); i++) // Move all cards in the deck to be shifted
+            {
+                int visualCardIndex = player.getDeck(deckToShiftIndex).getVisualCardIndex(i);
+                System.out.println("Visual card " + i + " in deck " + deckToShiftIndex + " has visualCardIndex: " + visualCardIndex);
+
+                Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
+                Point destinationPos = new Point(startingPos.x + splitOffsetX, startingPos.y);
+
+                animator.start(startingPos, destinationPos, visualCardIndex);
+            }
+
+            player.swapDecks(deckToShiftIndex, deckToShiftIndex + 1);
+        }
+        else
+        {
+            deckToShiftIndex = player.getActiveDeckIndex() - movesNeeded;
+
+            for (int i = 0; i < player.getDeck(deckToShiftIndex).getDeckSize(); i++)
+            {
+                int visualCardIndex = player.getDeck(deckToShiftIndex).getVisualCardIndex(i);
+                System.out.println("Visual card " + i + " in deck " + deckToShiftIndex + " has visualCardIndex: " + visualCardIndex);
+
+                Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
+                Point destinationPos = new Point(startingPos.x - splitOffsetX, startingPos.y);
+
+                animator.start(startingPos, destinationPos, visualCardIndex);
+            }
+
+            player.swapDecks(deckToShiftIndex, deckToShiftIndex - 1);
+        }
+
+        System.out.println("Index of deck to be shifted: " + deckToShiftIndex);
     }
 
     private boolean canDoubleDown()
@@ -836,6 +901,8 @@ public class GamePanel extends JPanel implements Runnable
             }
         }
 
+        int count = 0;
+
         for (VisualCard visualCard : visualCards)
         {   
             if (visualCard.isRotated())
@@ -855,6 +922,10 @@ public class GamePanel extends JPanel implements Runnable
                 g2d.drawImage(cardShadow, visualCard.getX() - scale, visualCard.getY() - scale, cardShadowSize.width, cardShadowSize.height, null);
                 g2d.drawImage(visualCard.getImage(), visualCard.getX(), visualCard.getY(), cardSize.width, cardSize.height, null);
             }
+
+            g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
+
+            count++;
         }
 
         for (VisualChip visualChip : visualChips)
