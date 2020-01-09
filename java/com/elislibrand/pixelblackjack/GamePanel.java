@@ -222,7 +222,7 @@ public class GamePanel extends JPanel implements Runnable
             cardImage = cardFaceDown;
         }
 
-        visualCards.add(new VisualCard(cardImage, destinationPos.x, destinationPos.y, isRotated));
+        visualCards.add(new VisualCard(cardImage, cardHolderPos.x, cardHolderPos.y, isRotated));
         destinationDeck.addVisualCardIndex(visualCards.size() - 1);
 
         animator.start(cardHolderPos, destinationPos, visualCards.size() - 1);
@@ -863,7 +863,7 @@ public class GamePanel extends JPanel implements Runnable
         if (debugMode)
         {
             g.setColor(Color.WHITE);
-            g.drawString("Pixel Blackjack v2.2.0 [multiple splits added and major bug fixes]", 12, 24);
+            g.drawString("Pixel Blackjack v2.2.1 [multiple splits added and bug fixes]", 12, 24);
             g.drawString("Player chips: " + player.getChips(), 12, 48);
             g.drawString("Player bet: " + player.getBet(), 12, 72);
             g.drawString("Player winnings: " + player.getWinnings(), 12, 96);
@@ -1105,7 +1105,7 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
-    private class Animator
+    private class Animator // Fucks up the positions slightly
     {
         private boolean isPlaying = false;
 
