@@ -2,6 +2,7 @@ package com.elislibrand.pixelblackjack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 public class Player
 {
@@ -12,7 +13,7 @@ public class Player
     private int initialBet;
     private int winnings;
 
-    private final int maxNumberOfSplitDecks = 4; // Must be an even number
+    private final int maxNumberOfSplitDecks = 6; // Must be an even number
     private int numberOfActiveDecks = 1;
     private int activeDeckIndex;
 
@@ -302,6 +303,11 @@ public class Player
         }
 
         return false;
+    }
+
+    public void swapDecks(int indexOfFirstDeck, int indexOfSecondDeck) // hands
+    {
+        Collections.swap(decks, indexOfFirstDeck, indexOfSecondDeck);
     }
 
     public boolean hasPlacedBet()
