@@ -17,22 +17,22 @@ public class Card
 
     public Image getImage()
     {
-        return this.image;
+        return image;
     }
 
     public Suit getSuit()
     {
-        return this.suit;
+        return suit;
     }
 
     public Value getValue()
     {
-        return this.value;
+        return value;
     }
 
     public int getIntegerValue()
     {
-        switch (this.value)
+        switch (value)
         {
             case TWO: return 2;
             case THREE: return 3;
@@ -52,7 +52,7 @@ public class Card
 
     public int getCount()
     {
-        switch (this.value)
+        switch (value)
         {
             case TWO: return 1;
             case THREE: return 1;

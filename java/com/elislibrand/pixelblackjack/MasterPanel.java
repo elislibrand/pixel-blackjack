@@ -25,7 +25,7 @@ public class MasterPanel extends JPanel
     private final void initializeBoard()
     {
         setLayout(new GridBagLayout());
-        setBackground(new Color(48, 102, 60));
+        setBackground(new Color(0, 0, 0));
         setPreferredSize(Screen.RESOLUTION);
         add(new GamePanel(), getGridBagConstraints());
 

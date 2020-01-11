@@ -29,6 +29,21 @@ public class Hand
         this.isActive = isActive;
     }
 
+    public Card getCard(int index)
+    {
+        return cards.get(index);
+    }
+
+    public void removeCard(int index)
+    {
+        cards.remove(index);
+    }
+
+    public void addCard(Card card)
+    {
+        cards.add(card);
+    }
+
     public void drawCardFromDeck(Deck deck)
     {
         cards.add(deck.getCard(0));
@@ -50,11 +65,17 @@ public class Hand
         visualCardIndexes.remove(index);
     }
 
+    public void moveLastCardToHand(Hand hand) // REMAKE
+    {
+        hand.addCard(getCard(1));
+        removeCard(1);
+    }
+
     public void moveLastVisualCardIndexToHand(Hand hand)
     {
         int lastVisualCardIndex = visualCardIndexes.get(visualCardIndexes.size() - 1);
 
-        hand.visualCardIndexes.add(lastVisualCardIndex);
+        hand.addVisualCardIndex(lastVisualCardIndex);
         removeVisualCardIndex(visualCardIndexes.size() - 1);
     }
 
@@ -68,7 +89,7 @@ public class Hand
         int totalValue = 0;
         int aces = 0;
 
-        for (Card card : this.cards)
+        for (Card card : cards)
         {
             switch (card.getValue())
             {
@@ -101,6 +122,19 @@ public class Hand
         }
 
         return totalValue;
+    }
+
+    public void moveAllCardsToDeck(Deck deck)
+    {
+        for (int i = 0; i < cards.size(); i++)
+        {
+            deck.addCard(getCard(i));
+        }
+
+        for (int i = 0; i < cards.size(); i++)
+        {
+            removeCard(0);
+        }
     }
 
     public boolean canDoubleDown()
@@ -159,7 +193,7 @@ public class Hand
         this.isBusted = isBusted;
     }
 
-    public boolean hasDoubledDown()
+    public boolean isDoubledDown()
     {
         return isDoubledDown;
     }
@@ -176,6 +210,7 @@ public class Hand
         isDoubledDown = false;
         isActive = false;
 
+        cards.clear();
         visualCardIndexes.clear();
     }
 }

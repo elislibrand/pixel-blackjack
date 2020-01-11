@@ -10,27 +10,10 @@ import javax.swing.ImageIcon;
 public class Deck
 {
     private List<Card> cards;
-    private List<Integer> visualCardIndexes;
-
-    private boolean hasBlackjack = false;
-    private boolean hasBusted = false;
-    private boolean hasDoubledDown = false;
-    private boolean isActive = false;
 
     public Deck()
     {
         cards = new ArrayList<Card>();
-        visualCardIndexes = new ArrayList<Integer>();
-    }
-
-    public boolean isActive()
-    {
-        return isActive;
-    }
-
-    public void setActive(boolean isActive)
-    {
-        this.isActive = isActive;
     }
 
     public void createFullDeck()
@@ -41,7 +24,7 @@ public class Deck
             {
                 Image cardImage = new ImageIcon(getClass().getResource("/assets/cards/" + cardValue.toString().toLowerCase() + cardSuit.toString().toLowerCase() + ".png")).getImage();
 
-                this.cards.add(new Card(cardImage, cardSuit, cardValue));
+                cards.add(new Card(cardImage, cardSuit, cardValue));
             }
         }
     }
@@ -66,186 +49,21 @@ public class Deck
         cards.add(card);
     }
 
-    public void drawCardFromDeck(Deck deck)
+    public int getNumberOfCards()
     {
-        cards.add(deck.getCard(0));
-        deck.removeCard(0);
+        return cards.size();
     }
 
-    public void addVisualCardIndex(int index)
+    public void moveAllCardsToDeck(Deck deck)
     {
-        visualCardIndexes.add(index);
-    }
-
-    public int getVisualCardIndex(int cardIndex)
-    {
-        return visualCardIndexes.get(cardIndex);
-    }
-
-    private void removeVisualCardIndex(int index)
-    {
-        visualCardIndexes.remove(index);
-    }
-
-    public void moveLastCardToDeck(Deck deck) // REMAKE
-    {
-        deck.cards.add(getCard(1));
-        removeCard(1);
-    }
-
-    public void moveLastVisualCardIndexToDeck(Deck deck)
-    {
-        int lastVisualCardIndex = visualCardIndexes.get(visualCardIndexes.size() - 1);
-
-        deck.visualCardIndexes.add(lastVisualCardIndex);
-        removeVisualCardIndex(visualCardIndexes.size() - 1);
-    }
-
-    public int getDeckSize()
-    {
-        return this.cards.size();
-    }
-
-    public void moveAllCardsToDeck(Deck deckToMoveTo)
-    {
-        int thisDeckSize = this.cards.size();
-
-        for (int i = 0; i < thisDeckSize; i++)
+        for (int i = 0; i < cards.size(); i++)
         {
-            deckToMoveTo.addCard(this.getCard(i));
+            deck.addCard(getCard(i));
         }
 
-        for (int i = 0; i < thisDeckSize; i++)
+        for (int i = 0; i < cards.size(); i++)
         {
-            this.removeCard(0);
+            removeCard(0);
         }
-    }
-
-    public int getValueOfCards()
-    {
-        int totalValue = 0;
-        int aces = 0;
-
-        for (Card card : this.cards)
-        {
-            switch (card.getValue())
-            {
-                case ACE: aces += 1; break;
-                case TWO: totalValue += 2; break;
-                case THREE: totalValue += 3; break;
-                case FOUR: totalValue += 4; break;
-                case FIVE: totalValue += 5; break;
-                case SIX: totalValue += 6; break;
-                case SEVEN: totalValue += 7; break;
-                case EIGHT: totalValue += 8; break;
-                case NINE: totalValue += 9; break;
-                case TEN: totalValue += 10; break;
-                case JACK: totalValue += 10; break;
-                case QUEEN: totalValue += 10; break;
-                case KING: totalValue += 10; break;
-            }
-        }
-
-        for (int i = 0; i < aces; i++)
-        {
-            if (totalValue + (aces - 1) > 10)
-            {
-                totalValue += 1;
-            }
-            else
-            {
-                totalValue += 11;
-            }
-        }
-
-        return totalValue;
-    }
-
-    public boolean canDoubleDown()
-    {
-        if (this.hasTwoCards())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    public boolean canSplit()
-    {
-        if (hasTwoCards() && isEqualValueOfStartingCards())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    private boolean hasTwoCards()
-    {
-        if (this.cards.size() == 2)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    private boolean isEqualValueOfStartingCards()
-    {
-        if (this.cards.get(0).getIntegerValue() == this.cards.get(1).getIntegerValue())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    public boolean hasBlackjack()
-    {
-        return this.hasBlackjack;
-    }
-
-    public void setBlackjack(boolean hasBlackjack)
-    {
-        this.hasBlackjack = hasBlackjack;
-    }
-
-    public boolean hasBusted()
-    {
-        return this.hasBusted;
-    }
-
-    public void setBusted(boolean hasBusted)
-    {
-        this.hasBusted = hasBusted;
-    }
-
-    public boolean hasDoubledDown()
-    {
-        return this.hasDoubledDown;
-    }
-
-    public void setDoubledDown(boolean hasDoubledDown)
-    {
-        this.hasDoubledDown = hasDoubledDown;
-    }
-
-    public void reset()
-    {
-        hasBlackjack = false;
-        hasBusted = false;
-        hasDoubledDown = false;
-        isActive = false;
-
-        visualCardIndexes.clear();
     }
 }

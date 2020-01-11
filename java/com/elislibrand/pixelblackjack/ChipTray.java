@@ -13,7 +13,7 @@ public class ChipTray
     private Random random = new Random();
 
     private List<Chip> chips;
-    private List<VisualChip> visualChips = new ArrayList<VisualChip>();
+    private List<VisualChip> visualChips;
 
     private final Point leftChipStartingPos = new Point((24 * Screen.SCALE), (206 * Screen.SCALE));
     private final Point rightChipStartingPos = new Point((228 * Screen.SCALE), (206 * Screen.SCALE));
@@ -21,7 +21,8 @@ public class ChipTray
 
     public ChipTray(int playerChips)
     {
-        this.chips = new ArrayList<Chip>();
+        chips = new ArrayList<Chip>();
+        visualChips = new ArrayList<VisualChip>();
 
         create();
     }
@@ -40,7 +41,7 @@ public class ChipTray
 
             topDownImage = new ImageIcon(getClass().getResource("/assets/chips/" + chipValue.toString().toLowerCase() + "_chip_top_down.png")).getImage();
 
-            this.chips.add(new Chip(topDownImage, images, chipValue.getValue()));
+            chips.add(new Chip(topDownImage, images, chipValue.getValue()));
         }
     }
 
@@ -127,7 +128,7 @@ public class ChipTray
 
     public Image getTopDownImage(int playerBet)
     {
-        return this.chips.get(getChipIndex(playerBet)).getTopDownImage();
+        return chips.get(getChipIndex(playerBet)).getTopDownImage();
     }
 
     private int getChipIndex(int playerBet)
@@ -136,7 +137,7 @@ public class ChipTray
 
         for (int i = (chips.size() - 1); i >= 0; i--)
         {
-            Chip chip = this.chips.get(i);
+            Chip chip = chips.get(i);
 
             if (playerBet - chip.getValue() >= 0)
             {
@@ -151,6 +152,6 @@ public class ChipTray
 
     public List<VisualChip> getVisualChips()
     {
-        return this.visualChips;
+        return visualChips;
     }
 }

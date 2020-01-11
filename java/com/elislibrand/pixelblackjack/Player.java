@@ -6,7 +6,7 @@ import java.util.Collections;
 
 public class Player
 {
-    private List<Deck> hands;
+    private List<Hand> hands;
 
     private int chips = 50;
     private int bet;
@@ -14,39 +14,45 @@ public class Player
     private int winnings;
 
     private final int maxNumberOfHands = 6; // Must be an even number
-    private int numberOfActiveDecks = 1;
-    private int currentDeckIndex;
+    private int numberOfActiveHands;
+    private int currentHandIndex;
 
     private boolean hasPlacedBet = false;
 
     public Player()
     {
-        hands = new ArrayList<Deck>();
+        hands = new ArrayList<Hand>();
+        numberOfActiveHands = 1;
     }
 
-    public List<Deck> getDecks()
+    public List<Hand> getHands()
     {
         return hands;
     }
 
-    public Deck getDeck(int index)
+    public Hand getHand(int index)
     {
         return hands.get(index);
     }
 
-    public void addDeck(int index, Deck deck)
+    /* public void addHand(int index, Hand hand)
     {
-        hands.add(index, deck);
+        hands.add(index, hand);
+    } */
+
+    public void addHand(Hand hand)
+    {
+        hands.add(hand);
     }
 
-    public int getNumberOfDecks()
+    public int getNumberOfHands()
     {
         return hands.size();
     }
 
-    public int getIndexOfDeck(Deck deck)
+    public int getIndexOfHand(Hand hand)
     {
-        return hands.indexOf(deck);
+        return hands.indexOf(hand);
     }
 
     public int getChips()
@@ -152,41 +158,41 @@ public class Player
         return maxNumberOfHands;
     }
 
-    public int getNumberOfActiveDecks()
+    public int getNumberOfActiveHands()
     {
-        return numberOfActiveDecks;
+        return numberOfActiveHands;
     }
 
-    public void incrementNumberOfActiveDecks()
+    public void incrementNumberOfActiveHands()
     {
-        numberOfActiveDecks++;
+        numberOfActiveHands++;
     }
 
-    public int getCurrentDeckIndex()
+    public int getCurrentHandIndex()
     {
-        return currentDeckIndex;
+        return currentHandIndex;
     }
 
-    public void setCurrentDeckIndex(int currentDeckIndex)
+    public void setCurrentHandIndex(int currentHandIndex)
     {
-        this.currentDeckIndex = currentDeckIndex;
+        this.currentHandIndex = currentHandIndex;
     }
 
-    public void incrementCurrentDeckIndex()
+    public void incrementCurrentHandIndex()
     {
-        currentDeckIndex++;
+        currentHandIndex++;
     }
 
-    public void decrementCurrentDeckIndex()
+    public void decrementCurrentHandIndex()
     {
-        currentDeckIndex--;
+        currentHandIndex--;
     }
 
-    public boolean isAnotherDeck()
+    public boolean isAnotherHand()
     {
-        if (currentDeckIndex == 0) return false;
+        if (currentHandIndex == 0) return false;
 
-        if (hands.get(currentDeckIndex - 1).isActive())
+        if (hands.get(currentHandIndex - 1).isActive())
         {
             return true;
         }
@@ -196,28 +202,28 @@ public class Player
         }
     }
 
-    public void checkForBlackjackInDeck(int deckIndex)
+    public void checkForBlackjackInHand(int index) // Rename
     {
-        Deck deck = hands.get(deckIndex);
+        Hand hand = hands.get(index);
 
-        if (deck.getValueOfCards() == 21 && deck.getDeckSize() == 2)
+        if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() == 2)
         {
-            deck.setBlackjack(true);
+            hand.setBlackjack(true);
         }
     }
 
-    public boolean hasBlackjackInDeck(int deckIndex)
+    public boolean isBlackjackInHand(int index)
     {
-        return hands.get(deckIndex).hasBlackjack();
+        return hands.get(index).isBlackjack();
     }
 
-    public boolean hasBlackjackInAllDecks()
+    public boolean isBlackjackInAllHands()
     {
-        for (Deck deck : hands)
+        for (Hand hand : hands)
         {
-            if (deck.isActive())
+            if (hand.isActive())
             {
-                if (!deck.hasBlackjack())
+                if (!hand.isBlackjack())
                 {
                     return false;
                 }
@@ -227,11 +233,11 @@ public class Player
         return true;
     }
 
-    public boolean checkForAutoStandInDeck(int deckIndex)
+    public boolean shouldAutoStandInHand(int index)
     {
-        Deck deck = hands.get(deckIndex);
+        Hand hand = hands.get(index);
 
-        if (deck.getValueOfCards() == 21 && deck.getDeckSize() > 2)
+        if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() > 2)
         {
             return true;
         }
@@ -239,33 +245,33 @@ public class Player
         return false;
     }
 
-    public boolean hasDoubledDownInDeck(int deckIndex)
+    public boolean isDoubledDownInHand(int index)
     {
-        return hands.get(deckIndex).hasDoubledDown();
+        return hands.get(index).isDoubledDown();
     }
 
-    public void checkForBustInDeck(int deckIndex)
+    public void checkForBustInHand(int index)
     {
-        Deck deck = hands.get(deckIndex);
+        Hand hand = hands.get(index);
 
-        if (deck.getValueOfCards() > 21)
+        if (hand.getValueOfCards() > 21)
         {
-            deck.setBusted(true);
+            hand.setBusted(true);
         }
     }
 
-    public boolean hasBustedInDeck(int deckIndex)
+    public boolean isBustedInHand(int index)
     {
-        return hands.get(deckIndex).hasBusted();
+        return hands.get(index).isBusted();
     }
 
-    public boolean hasBustedInAllDecks()
+    public boolean isBustedInAllHands()
     {
-        for (Deck deck : hands)
+        for (Hand hand : hands)
         {
-            if (deck.isActive())
+            if (hand.isActive())
             {
-                if (!deck.hasBusted())
+                if (!hand.isBusted())
                 {
                     return false;
                 }
@@ -275,29 +281,29 @@ public class Player
         return true;
     }
 
-    public int getValueOfCardsInDeck(int deckIndex)
+    public int getValueOfCardsInHand(int index)
     {
-        return hands.get(deckIndex).getValueOfCards();
+        return hands.get(index).getValueOfCards();
     }
 
-    public int getSizeOfDeck(int deckIndex)
+    public int getNumberOfCardsInHand(int index)
     {
-        return hands.get(deckIndex).getDeckSize();
+        return hands.get(index).getNumberOfCards();
     }
 
-    public void setDoubledDownToTrueInDeck(int deckIndex)
+    public void setDoubledDownToTrueInHand(int index)
     {
-        hands.get(deckIndex).setDoubledDown(true);
+        hands.get(index).setDoubledDown(true);
     }
 
-    public boolean canDoubleDownDeck(int deckIndex)
+    public boolean canDoubleDownInHand(int index)
     {
-        return hands.get(deckIndex).canDoubleDown();
+        return hands.get(index).canDoubleDown();
     }
 
-    public boolean canSplitDeck(int deckIndex)
+    public boolean canSplitHand(int index)
     {
-        if (hands.get(deckIndex).canSplit() && getNumberOfActiveDecks() < maxNumberOfHands)
+        if (hands.get(index).canSplit() && getNumberOfActiveHands() < maxNumberOfHands)
         {
             return true;
         }
@@ -305,9 +311,9 @@ public class Player
         return false;
     }
 
-    public void swapDecks(int indexOfFirstDeck, int indexOfSecondDeck) // hands
+    public void swapHands(int indexOfFirstHand, int indexOfSecondHand)
     {
-        Collections.swap(hands, indexOfFirstDeck, indexOfSecondDeck);
+        Collections.swap(hands, indexOfFirstHand, indexOfSecondHand);
     }
 
     public boolean hasPlacedBet()
@@ -328,15 +334,15 @@ public class Player
 
     public void reset()
     {
-        for (Deck deck : hands)
+        for (Hand hand : hands)
         {
-            deck.reset();
+            hand.reset();
         }
 
-        currentDeckIndex = getMaxNumberOfHands() / 2 - 1;
-        hands.get(currentDeckIndex).setActive(true);
+        currentHandIndex = getMaxNumberOfHands() / 2 - 1;
+        hands.get(currentHandIndex).setActive(true);
         
-        numberOfActiveDecks = 1;
+        numberOfActiveHands = 1;
         hasPlacedBet = false;
         winnings = 0;
     }

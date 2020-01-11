@@ -3,6 +3,7 @@ package com.elislibrand.pixelblackjack;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.BasicStroke;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -32,6 +33,7 @@ public class GamePanel extends JPanel implements Runnable
     private List<VisualChip> visualChips;
 
     private final Player player = new Player();
+    private final Hand dealerHand = new Hand();
 
     private final int scale = Screen.SCALE;
 
@@ -46,7 +48,7 @@ public class GamePanel extends JPanel implements Runnable
     private final Dimension chipTrayShadowSize = new Dimension(123 * scale, 60 * scale);
 
     private final Point playerCardStartingPos = new Point((screenSize.width / 2) - ((int)((cardSize.width / scale) / 2) * scale) - (1 * scale), // There is room for a number under the card, displaying the hand's value
-                                                          screenSize.height - cardSize.height - betSquareSize.height - (21 * scale));           // (3 * scale) pixels margin top and bottom from the number ?
+                                                          screenSize.height - cardSize.height - betSquareSize.height - (20 * scale));           // (3 * scale) pixels margin top and bottom from the number ?
     private final Point dealerCardStartingPos = new Point((screenSize.width / 2) + (2 * scale), 10 * scale);
     private final Point betSquarePos = new Point((screenSize.width / 2) - (betSquareSize.width / 2), screenSize.height - (10 * scale) - betSquareSize.height);
     private final Point leftChipTrayPos = new Point(20 * scale, screenSize.height - (10 * scale) - betSquareSize.height);
@@ -85,7 +87,6 @@ public class GamePanel extends JPanel implements Runnable
 
     private final Deck playingDeck = new Deck();
     private final Deck usedDeck = new Deck();
-    private final Deck dealerDeck = new Deck();
 
     public GamePanel()
     {
@@ -99,9 +100,10 @@ public class GamePanel extends JPanel implements Runnable
                            "\nScreen Bit Depth: " + Screen.BIT_DEPTH);
 
         addKeyListener(new TAdapter());
-        setOpaque(false);
+        //setOpaque(false);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
+        setBackground(new Color(48, 102, 60));
         setPreferredSize(new Dimension(Screen.WIDTH, Screen.HEIGHT));
         
         loadImages();
@@ -120,7 +122,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private final void initializeGame()
     {
-        player.setCurrentDeckIndex((player.getMaxNumberOfHands() / 2) - 1);
+        player.setCurrentHandIndex((player.getMaxNumberOfHands() / 2) - 1);
 
         player.setBet(minBet);
 
@@ -136,14 +138,14 @@ public class GamePanel extends JPanel implements Runnable
     {
         for (int i = 0; i < player.getMaxNumberOfHands(); i++)
         {
-            player.addDeck(i, new Deck());
+            player.addHand(new Hand());
         }
     }
 
     private final void activateHands()
     {
-        dealerDeck.setActive(true);
-        player.getDeck(player.getCurrentDeckIndex()).setActive(true);
+        dealerHand.setActive(true);
+        player.getHand(player.getCurrentHandIndex()).setActive(true);
     }
 
     private final void createPlayingDeck()
@@ -175,16 +177,16 @@ public class GamePanel extends JPanel implements Runnable
             switch (visualCards.size())
             {
                 case 0:
-                    drawCard(player.getDeck(player.getCurrentDeckIndex()), playerCardStartingPos, false, false);
+                    drawCard(player.getHand(player.getCurrentHandIndex()), playerCardStartingPos, false, false);
                     break;
                 case 1:
-                    drawCard(dealerDeck, dealerCardStartingPos, true, false);
+                    drawCard(dealerHand, dealerCardStartingPos, true, false);
                     break;
                 case 2:
-                    drawCard(player.getDeck(player.getCurrentDeckIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentDeckIndex()), false, false);
+                    drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
                     break;
                 case 3:
-                    drawCard(dealerDeck, new Point(dealerCardStartingPos.x + dealerCardOffset.x, dealerCardStartingPos.y + dealerCardOffset.y), false, false);
+                    drawCard(dealerHand, new Point(dealerCardStartingPos.x + dealerCardOffset.x, dealerCardStartingPos.y + dealerCardOffset.y), false, false);
                     break;
                 case 4:
                     checkForDealerBlackjack();
@@ -195,26 +197,29 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
-    private Point getNextPlayerCardPosition(Point startingPos, int deckIndex)
+    private Point getNextPlayerCardPosition(Point startingPos, int handIndex)
     {
-        return new Point(startingPos.x + (playerCardOffset.x * player.getSizeOfDeck(deckIndex)), startingPos.y + (playerCardOffset.y * player.getSizeOfDeck(deckIndex)));
+        return new Point(startingPos.x + (playerCardOffset.x * player.getNumberOfCardsInHand(handIndex)),
+                         startingPos.y + (playerCardOffset.y * player.getNumberOfCardsInHand(handIndex)));
     }
 
-    private Point getNextSplitPlayerCardPosition(int deckIndex)
+    private Point getNextSplitPlayerCardPosition(int handIndex)
     {
-        return new Point(splitMarginX + (splitOffsetX * deckIndex) + (playerCardOffset.x * player.getSizeOfDeck(deckIndex)), playerCardStartingPos.y + (playerCardOffset.y * player.getSizeOfDeck(deckIndex)));
+        return new Point(splitMarginX + (splitOffsetX * handIndex) + (playerCardOffset.x * player.getNumberOfCardsInHand(handIndex)),
+                         playerCardStartingPos.y + (playerCardOffset.y * player.getNumberOfCardsInHand(handIndex)));
     }
 
     private Point getNextDealerCardPosition()
     {
-        return new Point(dealerCardStartingPos.x + (dealerCardOffset.x * dealerDeck.getDeckSize()), dealerCardStartingPos.y + (dealerCardOffset.y * dealerDeck.getDeckSize()));
+        return new Point(dealerCardStartingPos.x + (dealerCardOffset.x * dealerHand.getNumberOfCards()),
+                         dealerCardStartingPos.y + (dealerCardOffset.y * dealerHand.getNumberOfCards()));
     }
 
-    private void drawCard(Deck destinationDeck, Point destinationPos, boolean faceDown, boolean isRotated)
+    private void drawCard(Hand destinationHand, Point destinationPos, boolean faceDown, boolean isRotated)
     {
-        destinationDeck.drawCardFromDeck(playingDeck);
+        destinationHand.drawCardFromDeck(playingDeck);
         
-        Card drawnCard = destinationDeck.getCard(destinationDeck.getDeckSize() - 1);
+        Card drawnCard = destinationHand.getCard(destinationHand.getNumberOfCards() - 1);
         Image cardImage = drawnCard.getImage();
 
         if (faceDown)
@@ -223,7 +228,7 @@ public class GamePanel extends JPanel implements Runnable
         }
 
         visualCards.add(new VisualCard(cardImage, cardHolderPos.x, cardHolderPos.y, isRotated));
-        destinationDeck.addVisualCardIndex(visualCards.size() - 1);
+        destinationHand.addVisualCardIndex(visualCards.size() - 1);
 
         animator.start(cardHolderPos, destinationPos, visualCards.size() - 1);
         audioManager.play(Audio.CARD_DRAW);
@@ -243,7 +248,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private boolean hasBlackjackDealer()
     {        
-        if (dealerDeck.getValueOfCards() == 21)
+        if (dealerHand.getValueOfCards() == 21)
         {
             return true;
         }
@@ -253,15 +258,15 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
-    private void checkForPlayerBlackjack(int deckIndex)
+    private void checkForPlayerBlackjack(int index)
     {
-        player.checkForBlackjackInDeck(deckIndex);
+        player.checkForBlackjackInHand(index);
 
-        if (player.hasBlackjackInDeck(deckIndex) || player.checkForAutoStandInDeck(deckIndex))
+        if (player.isBlackjackInHand(index) || player.shouldAutoStandInHand(index))
         {
-            if (player.isAnotherDeck())
+            if (player.isAnotherHand())
             {    
-                goToNextDeck();
+                goToNextHand();
             }
             else
             {
@@ -272,23 +277,23 @@ public class GamePanel extends JPanel implements Runnable
 
     private void hit()
     {
-        if (player.getNumberOfActiveDecks() > 1)
+        if (player.getNumberOfActiveHands() > 1)
         {
-            drawCard(player.getDeck(player.getCurrentDeckIndex()), getNextSplitPlayerCardPosition(player.getCurrentDeckIndex()), false, false);
+            drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, false);
         }
         else
         {
-            drawCard(player.getDeck(player.getCurrentDeckIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentDeckIndex()), false, false);
+            drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
         }
 
-        checkForPlayerBust(player.getCurrentDeckIndex());
+        checkForPlayerBust(player.getCurrentHandIndex()); // Maybe does not need arg
     }
 
     private void stand()
     {
-        if (player.isAnotherDeck())
+        if (player.isAnotherHand())
         {    
-            goToNextDeck();
+            goToNextHand();
         }
         else
         {
@@ -301,18 +306,18 @@ public class GamePanel extends JPanel implements Runnable
         if (canDoubleDown())
         {
             doubleBet();
-            player.setDoubledDownToTrueInDeck(player.getCurrentDeckIndex());
+            player.setDoubledDownToTrueInHand(player.getCurrentHandIndex());
             
-            if (player.getNumberOfActiveDecks() > 1)
+            if (player.getNumberOfActiveHands() > 1)
             {
-                drawCard(player.getDeck(player.getCurrentDeckIndex()), getNextSplitPlayerCardPosition(player.getCurrentDeckIndex()), false, true);
+                drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, true);
             }
             else
             {
-                drawCard(player.getDeck(player.getCurrentDeckIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentDeckIndex()), false, true);
+                drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, true);
             }
 
-            checkForPlayerBust(player.getCurrentDeckIndex());
+            checkForPlayerBust(player.getCurrentHandIndex());
         }
         else
         {
@@ -328,8 +333,6 @@ public class GamePanel extends JPanel implements Runnable
     {
         if (!animator.isPlaying())
         {
-            System.out.println(splitStage);
-
             switch (splitStage)
             {
                 case INITIATE:
@@ -350,38 +353,38 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case MOVE_UPPER_VISUAL_CARD:
-                    int upperVisualCardIndex = player.getDeck(player.getCurrentDeckIndex()).getVisualCardIndex(1);
-                    moveSplitCard(player.getCurrentDeckIndex() + splitDirection, upperVisualCardIndex);
+                    int upperVisualCardIndex = player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(1);
+                    moveSplitCard(player.getCurrentHandIndex() + splitDirection, upperVisualCardIndex);
 
-                    if (player.getNumberOfActiveDecks() > 2)
+                    if (player.getNumberOfActiveHands() > 2)
                     {
                         splitStage = splitStage.next();
                     }
 
                     break;
                 case MOVE_LOWER_VISUAL_CARD:
-                    int lowerVisualCardIndex = player.getDeck(player.getCurrentDeckIndex()).getVisualCardIndex(0);
-                    moveSplitCard(player.getCurrentDeckIndex(), lowerVisualCardIndex);
+                    int lowerVisualCardIndex = player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(0);
+                    moveSplitCard(player.getCurrentHandIndex(), lowerVisualCardIndex);
 
                     break;
                 case SETUP_NEW_HANDS:
-                    player.getDeck(player.getCurrentDeckIndex() + splitDirection).setActive(true);
-                    player.getDeck(player.getCurrentDeckIndex()).moveLastCardToDeck(player.getDeck((player.getCurrentDeckIndex() + splitDirection)));
-                    player.getDeck(player.getCurrentDeckIndex()).moveLastVisualCardIndexToDeck(player.getDeck(player.getCurrentDeckIndex() + splitDirection));
+                    player.getHand(player.getCurrentHandIndex() + splitDirection).setActive(true);
+                    player.getHand(player.getCurrentHandIndex()).moveLastCardToHand(player.getHand((player.getCurrentHandIndex() + splitDirection)));
+                    player.getHand(player.getCurrentHandIndex()).moveLastVisualCardIndexToHand(player.getHand(player.getCurrentHandIndex() + splitDirection));
 
                     break;
                 case DRAW_CARD_TO_RIGHT_HAND:
-                    drawCard(player.getDeck(player.getCurrentDeckIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getCurrentDeckIndex() + splitDirection), false, false);
+                    drawCard(player.getHand(player.getCurrentHandIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getCurrentHandIndex() + splitDirection), false, false);
                     
                     break;
                 case DRAW_CARD_TO_LEFT_HAND:
-                    drawCard(player.getDeck(player.getCurrentDeckIndex()), getNextSplitPlayerCardPosition(player.getCurrentDeckIndex()), false, false);
+                    drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, false);
                     
                     break;
                 case CHANGE_GAME_STATE:
                     if (splitDirection == 1)
                     {
-                        player.incrementCurrentDeckIndex();
+                        player.incrementCurrentHandIndex();
                     }
 
                     gameState = GameState.PLAYER_CHOOSE;
@@ -397,30 +400,30 @@ public class GamePanel extends JPanel implements Runnable
     {
         doubleBet();
 
-        player.incrementNumberOfActiveDecks();
+        player.incrementNumberOfActiveHands();
 
         splitDirection = getSplitDirection();
         //System.out.println("\nDirection of split: " + splitDirection);
         splitIndexToMoveTo = getSplitIndexToMoveTo();
         //System.out.println("Empty slot at index: " + splitIndexToMoveTo);
 
-        movesNeeded = Math.abs(player.getCurrentDeckIndex() - splitIndexToMoveTo) - 1;
+        movesNeeded = Math.abs(player.getCurrentHandIndex() - splitIndexToMoveTo) - 1;
         //System.out.println("Moves needed: " + movesNeeded);
     }
 
     private int getSplitDirection()
     {
-        if (player.getNumberOfActiveDecks() <= 2)
+        if (player.getNumberOfActiveHands() <= 2)
         {
             return 1;
         }
 
-        if (player.getCurrentDeckIndex() > (player.getMaxNumberOfHands() / 2) - 1)
+        if (player.getCurrentHandIndex() > (player.getMaxNumberOfHands() / 2) - 1)
         {
-            for (int i = player.getCurrentDeckIndex() + 1; i < player.getMaxNumberOfHands(); i++) 
+            for (int i = player.getCurrentHandIndex() + 1; i < player.getMaxNumberOfHands(); i++) 
             {
 
-                if (!player.getDeck(i).isActive())
+                if (!player.getHand(i).isActive())
                 {
                     return 1;
                 }
@@ -430,10 +433,10 @@ public class GamePanel extends JPanel implements Runnable
         }
         else
         {
-            for (int i = player.getCurrentDeckIndex() - 1; i >= 0; i--)
+            for (int i = player.getCurrentHandIndex() - 1; i >= 0; i--)
             {
 
-                if (!player.getDeck(i).isActive())
+                if (!player.getHand(i).isActive())
                 {
                     return -1;
                 }
@@ -445,9 +448,9 @@ public class GamePanel extends JPanel implements Runnable
 
     private int getSplitIndexToMoveTo()
     {
-        for (int i = player.getCurrentDeckIndex() + splitDirection; shouldStopSearchingForSplitIndexToMoveTo(i); i += splitDirection)
+        for (int i = player.getCurrentHandIndex() + splitDirection; shouldStopSearchingForSplitIndexToMoveTo(i); i += splitDirection)
         {
-            if (!player.getDeck(i).isActive())
+            if (!player.getHand(i).isActive())
             {
                 return i;
             }
@@ -466,12 +469,12 @@ public class GamePanel extends JPanel implements Runnable
         return index >= 0;
     }
 
-    private void moveSplitCard(int deckIndex, int visualCardIndex)
+    private void moveSplitCard(int handIndex, int visualCardIndex)
     {
         VisualCard visualCard = visualCards.get(visualCardIndex);
 
         Point startingPos = new Point(visualCard.getX(), visualCard.getY());
-        Point destinationPos = new Point(splitMarginX + (splitOffsetX * deckIndex), playerCardStartingPos.y);
+        Point destinationPos = new Point(splitMarginX + (splitOffsetX * handIndex), playerCardStartingPos.y);
 
         animator.start(startingPos, destinationPos, visualCardIndex);
         audioManager.play(Audio.CARD_SLIDE);
@@ -479,18 +482,16 @@ public class GamePanel extends JPanel implements Runnable
 
     private void shiftSplitCards()
     {
-        int deckToShiftIndex;
+        int handToShiftIndex;
 
         if (splitDirection == 1)
         {
-            deckToShiftIndex = player.getCurrentDeckIndex() + movesNeeded;
+            handToShiftIndex = player.getCurrentHandIndex() + movesNeeded;
             
-            //System.out.println("Deck " + deckToShiftIndex + " size: " + player.getDeck(deckToShiftIndex).getDeckSize());
-
-            for (int i = 0; i < player.getDeck(deckToShiftIndex).getDeckSize(); i++) // Move all cards in the deck to be shifted
+            for (int i = 0; i < player.getHand(handToShiftIndex).getNumberOfCards(); i++) // Move all cards in the hand to be shifted
             {
-                int visualCardIndex = player.getDeck(deckToShiftIndex).getVisualCardIndex(i);
-                //System.out.println("Visual card " + i + " in deck " + deckToShiftIndex + " has visualCardIndex: " + visualCardIndex);
+                int visualCardIndex = player.getHand(handToShiftIndex).getVisualCardIndex(i);
+                //System.out.println("Visual card " + i + " in hand " + handToShiftIndex + " has visualCardIndex: " + visualCardIndex);
 
                 Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
                 Point destinationPos = new Point(startingPos.x + splitOffsetX, startingPos.y);
@@ -498,16 +499,16 @@ public class GamePanel extends JPanel implements Runnable
                 animator.start(startingPos, destinationPos, visualCardIndex);
             }
 
-            player.swapDecks(deckToShiftIndex, deckToShiftIndex + 1);
+            player.swapHands(handToShiftIndex, handToShiftIndex + 1);
         }
         else
         {
-            deckToShiftIndex = player.getCurrentDeckIndex() - movesNeeded;
+            handToShiftIndex = player.getCurrentHandIndex() - movesNeeded;
 
-            for (int i = 0; i < player.getDeck(deckToShiftIndex).getDeckSize(); i++)
+            for (int i = 0; i < player.getHand(handToShiftIndex).getNumberOfCards(); i++)
             {
-                int visualCardIndex = player.getDeck(deckToShiftIndex).getVisualCardIndex(i);
-                //System.out.println("Visual card " + i + " in deck " + deckToShiftIndex + " has visualCardIndex: " + visualCardIndex);
+                int visualCardIndex = player.getHand(handToShiftIndex).getVisualCardIndex(i);
+                //System.out.println("Visual card " + i + " in hand " + handToShiftIndex + " has visualCardIndex: " + visualCardIndex);
 
                 Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
                 Point destinationPos = new Point(startingPos.x - splitOffsetX, startingPos.y);
@@ -515,15 +516,15 @@ public class GamePanel extends JPanel implements Runnable
                 animator.start(startingPos, destinationPos, visualCardIndex);
             }
 
-            player.swapDecks(deckToShiftIndex, deckToShiftIndex - 1);
+            player.swapHands(handToShiftIndex, handToShiftIndex - 1);
         }
 
-        //System.out.println("Index of deck to be shifted: " + deckToShiftIndex);
+        //System.out.println("Index of hand to be shifted: " + handToShiftIndex);
     }
 
     private boolean canDoubleDown()
     {
-        if (player.canDoubleBet() && player.canDoubleDownDeck(player.getCurrentDeckIndex()))
+        if (player.canDoubleBet() && player.canDoubleDownInHand(player.getCurrentHandIndex()))
         {
             return true;
         }
@@ -533,7 +534,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private boolean canSplit()
     {
-        if (player.canDoubleBet() && player.canSplitDeck(player.getCurrentDeckIndex()))
+        if (player.canDoubleBet() && player.canSplitHand(player.getCurrentHandIndex()))
         {
             return true;
         }
@@ -548,21 +549,21 @@ public class GamePanel extends JPanel implements Runnable
         sortChipTray();
     }
 
-    private void goToNextDeck()
+    private void goToNextHand()
     {
-        player.decrementCurrentDeckIndex();
+        player.decrementCurrentHandIndex();
         gameState = GameState.PLAYER_CHOOSE;
     }
 
     private void checkForPlayerBust(int index)
     {
-        player.checkForBustInDeck(index);
+        player.checkForBustInHand(index);
 
-        if (player.hasBustedInDeck(index))
+        if (player.isBustedInHand(index))
         {
-            if (player.isAnotherDeck())
+            if (player.isAnotherHand())
             {
-                goToNextDeck();
+                goToNextHand();
             }
             else
             {
@@ -573,9 +574,9 @@ public class GamePanel extends JPanel implements Runnable
         {
             if (gameState == GameState.PLAYER_DOUBLE_DOWN)
             {
-                if (player.isAnotherDeck())
+                if (player.isAnotherHand())
                 {
-                    goToNextDeck();
+                    goToNextHand();
                 }
                 else
                 {
@@ -595,9 +596,9 @@ public class GamePanel extends JPanel implements Runnable
         {
             revealFaceDownCard();
             
-            if (dealerDeck.getValueOfCards() < 17 && !player.hasBustedInAllDecks() && !player.hasBlackjackInAllDecks())
+            if (dealerHand.getValueOfCards() < 17 && !player.isBustedInAllHands() && !player.isBlackjackInAllHands())
             {
-                drawCard(dealerDeck, getNextDealerCardPosition(), false, false);
+                drawCard(dealerHand, getNextDealerCardPosition(), false, false);
             }
             else
             {
@@ -609,7 +610,7 @@ public class GamePanel extends JPanel implements Runnable
     private void revealFaceDownCard()
     {
         VisualCard visualCardWithFaceDownImage = visualCards.get(1);
-        visualCardWithFaceDownImage.setImage(dealerDeck.getCard(0).getImage());
+        visualCardWithFaceDownImage.setImage(dealerHand.getCard(0).getImage());
     }
 
     private void endRound()
@@ -617,8 +618,6 @@ public class GamePanel extends JPanel implements Runnable
         determineWinner();
         addToChipTray(player.getWinnings());
         
-        System.out.println("\nInitial Player Chips: " + (player.getChips() - player.getWinnings() + player.getBet()) + "\nInitial Player Bet: " + player.getInitialBet() + "\nPlayer Bet: " + player.getBet() + "\nPlayer Chips After Bet: " + (player.getChips() - player.getWinnings()) + "\nPlayer Winnings: " + player.getWinnings() + "\nPlayer Chips: " + player.getChips());
-
         gameState = GameState.CLEAR_BOARD;
     }
 
@@ -628,19 +627,19 @@ public class GamePanel extends JPanel implements Runnable
 
         for (int i = 0; i < player.getMaxNumberOfHands(); i++)
         {
-            if (player.getDeck(i).isActive())
+            if (player.getHand(i).isActive())
             {
-                if (player.hasBustedInDeck(i))
+                if (player.isBustedInHand(i))
                 {
                     winnings += 0;
                 }
-                else if (dealerDeck.getValueOfCards() > 21)
+                else if (dealerHand.getValueOfCards() > 21)
                 {
-                    if (player.hasBlackjackInDeck(i))
+                    if (player.isBlackjackInHand(i))
                     {
                         winnings += (int)(player.getInitialBet() * 2.5);
                     }
-                    else if (player.hasDoubledDownInDeck(i))
+                    else if (player.isDoubledDownInHand(i))
                     {
                         winnings += (player.getInitialBet() * 2) * 2;
                     }
@@ -649,13 +648,13 @@ public class GamePanel extends JPanel implements Runnable
                         winnings += player.getInitialBet() * 2;
                     }
                 }
-                else if (dealerDeck.getValueOfCards() > player.getValueOfCardsInDeck(i))
+                else if (dealerHand.getValueOfCards() > player.getValueOfCardsInHand(i))
                 {
                     winnings += 0;
                 }
-                else if (player.getValueOfCardsInDeck(i) == dealerDeck.getValueOfCards())
+                else if (player.getValueOfCardsInHand(i) == dealerHand.getValueOfCards())
                 {
-                    if (player.hasDoubledDownInDeck(i))
+                    if (player.isDoubledDownInHand(i))
                     {
                         winnings += player.getInitialBet() * 2;
                     }
@@ -664,13 +663,13 @@ public class GamePanel extends JPanel implements Runnable
                         winnings += player.getInitialBet();
                     }
                 }
-                else if (player.getValueOfCardsInDeck(i) > dealerDeck.getValueOfCards())
+                else if (player.getValueOfCardsInHand(i) > dealerHand.getValueOfCards())
                 {
-                    if (player.hasBlackjackInDeck(i))
+                    if (player.isBlackjackInHand(i))
                     {
                         winnings += (int)(player.getInitialBet() * 2.5);
                     }
-                    else if (player.hasDoubledDownInDeck(i))
+                    else if (player.isDoubledDownInHand(i))
                     {
                         winnings += (player.getInitialBet() * 2) * 2;
                     }
@@ -702,18 +701,19 @@ public class GamePanel extends JPanel implements Runnable
     
     private void clearCards()
     {
-        for (Deck deck : player.getDecks())
+        for (Hand hand : player.getHands())
         {
-            deck.moveAllCardsToDeck(usedDeck);
+            hand.moveAllCardsToDeck(usedDeck);
         }
 
-        dealerDeck.moveAllCardsToDeck(usedDeck);
+        dealerHand.moveAllCardsToDeck(usedDeck);
+
         visualCards.clear();
     }
 
     private void checkForShuffle()
     {
-        if (playingDeck.getDeckSize() < 52)
+        if (playingDeck.getNumberOfCards() < 52)
         {
             gameState = GameState.SHUFFLE_DECK;
         }
@@ -755,6 +755,8 @@ public class GamePanel extends JPanel implements Runnable
     {
         adjustPlayerBet();
         player.reset();
+
+        dealerHand.reset();
         
         canClearBoard = false;
     }
@@ -794,7 +796,7 @@ public class GamePanel extends JPanel implements Runnable
                 receiveCards();
                 break;
             case PLAYER_CHOOSE:
-                checkForPlayerBlackjack(player.getCurrentDeckIndex());
+                checkForPlayerBlackjack(player.getCurrentHandIndex());
                 break;
             case PLAYER_HIT:
                 hit();
@@ -841,20 +843,22 @@ public class GamePanel extends JPanel implements Runnable
             g.drawString("Player chips: " + player.getChips(), 12, 48);
             g.drawString("Player bet: " + player.getBet(), 12, 72);
             g.drawString("Player winnings: " + player.getWinnings(), 12, 96);
-            g.drawString("Active deck: " + player.getCurrentDeckIndex(), 12, 120);
+            g.drawString("Current hand: " + player.getCurrentHandIndex(), 12, 120);
         
-            for (int i = 0; i < player.getMaxNumberOfHands(); i++)
-            {
-                g2d.drawRect(splitMarginX + (i * splitOffsetX), playerCardStartingPos.y, cardSize.width, cardSize.height);
-            }
-
             int count = 0;
 
             for (VisualCard visualCard : visualCards)
             {
-                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
+                g.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
 
                 count++;
+            }
+
+            for (int i = 0; i < player.getMaxNumberOfHands(); i++)
+            {
+                g.setColor(Color.BLACK);
+                g2d.setStroke(new BasicStroke(scale));
+                g2d.drawRect(splitMarginX + (i * splitOffsetX) - (int)Math.ceil(((double)scale / 2)), playerCardStartingPos.y - (int)Math.ceil(((double)scale / 2)), cardSize.width + scale, cardSize.height + scale);
             }
         }
 
@@ -868,11 +872,11 @@ public class GamePanel extends JPanel implements Runnable
 
         if (player.hasPlacedBet())
         {
-            for (int i = 0; i < (player.getNumberOfDecks()); i++) // CHANGE CHIP POSITIONS BELOW
+            for (int i = 0; i < (player.getNumberOfHands()); i++) // CHANGE CHIP POSITIONS BELOW
             {
-                if (player.getDeck(i).isActive())
+                if (player.getHand(i).isActive())
                 {
-                    if (player.hasDoubledDownInDeck(i))
+                    if (player.isDoubledDownInHand(i))
                     {
                         g2d.drawImage(chipShadow, chipShadowStartingPos.x + chipDoubleDownOffset.x + (chipSplitOffset.x * i), chipShadowStartingPos.y, chipShadowSize.width, chipShadowSize.height, null);
                         g2d.drawImage(chipInBetSquare, chipStartingPos.x + chipDoubleDownOffset.x + (chipSplitOffset.x * i), chipStartingPos.y, chipSize.width, chipSize.height, null);
@@ -1018,11 +1022,11 @@ public class GamePanel extends JPanel implements Runnable
 
                         break;
                     case KeyEvent.VK_P:
-                        System.out.println("\nDecks:");
+                        System.out.println("\nHands:");
 
-                        for (Deck deck : player.getDecks())
+                        for (Hand hand : player.getHands())
                         {
-                            System.out.println(deck.isActive());
+                            System.out.println(hand.isActive());
                         }
 
                         break;
@@ -1112,19 +1116,25 @@ public class GamePanel extends JPanel implements Runnable
 
                 for (int i = 0; i < startingPositions.size(); i++)
                 {
-                    if (!isCloseToDestination())
+                    if (progress < 1)
                     {
                         newPosX = easeInOut((float)(progress * durationInSeconds), startingPositions.get(i).x, getDistance(i).x, (float)durationInSeconds);
                         newPosY = easeInOut((float)(progress * durationInSeconds), startingPositions.get(i).y, getDistance(i).y, (float)durationInSeconds);
                     
-                        currentPositions.get(i).setLocation((int)newPosX, (int)newPosY);
-    
+                        currentPositions.get(i).setLocation((int)Math.round(newPosX), (int)Math.round(newPosY));
+
+                        System.out.println("newPosX: " + (int)Math.round(newPosX));
+                        System.out.println("newPosY: " + (int)Math.round(newPosY));
+
                         visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
                         visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
                     }
                     else
                     {
-                        currentPositions.get(i).setLocation(destinationPositions.get(i));
+                        /* currentPositions.get(i).setLocation(destinationPositions.get(i));
+
+                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
+                        visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y); */
 
                         if (i == startingPositions.size() - 1)
                         {
@@ -1167,11 +1177,6 @@ public class GamePanel extends JPanel implements Runnable
             }
             
             return (distance / 2) * ((timeElapsedInSeconds -= 2) * timeElapsedInSeconds * timeElapsedInSeconds + 2) + startingPos;
-        }
-
-        private boolean isCloseToDestination()
-        {
-            return progress >= 1;
         }
 
         private Point getDistance(int index)

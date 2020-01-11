@@ -18,27 +18,27 @@ public class Chip
 
     public Image getTopDownImage()
     {
-        return this.topDownImage;
+        return topDownImage;
     }
 
     public Image getImage(int imageIndex)
     {
-        return this.images[imageIndex];        
+        return images[imageIndex];        
     }
 
     public int getNumberOfImages()
     {
-        return this.images.length;
+        return images.length;
     }
 
     public int getValue()
     {
-        return this.value;
+        return value;
     }
 
     public int getQuantity()
     {
-        return this.quantity;
+        return quantity;
     }
 
     public void setQuantity(int quantity)
