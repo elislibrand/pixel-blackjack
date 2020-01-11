@@ -6,47 +6,47 @@ import java.util.Collections;
 
 public class Player
 {
-    private List<Deck> decks;
+    private List<Deck> hands;
 
     private int chips = 50;
     private int bet;
     private int initialBet;
     private int winnings;
 
-    private final int maxNumberOfSplitDecks = 6; // Must be an even number
+    private final int maxNumberOfHands = 6; // Must be an even number
     private int numberOfActiveDecks = 1;
-    private int activeDeckIndex;
+    private int currentDeckIndex;
 
     private boolean hasPlacedBet = false;
 
     public Player()
     {
-        decks = new ArrayList<Deck>();
+        hands = new ArrayList<Deck>();
     }
 
     public List<Deck> getDecks()
     {
-        return decks;
+        return hands;
     }
 
     public Deck getDeck(int index)
     {
-        return decks.get(index);
+        return hands.get(index);
     }
 
     public void addDeck(int index, Deck deck)
     {
-        decks.add(index, deck);
+        hands.add(index, deck);
     }
 
     public int getNumberOfDecks()
     {
-        return decks.size();
+        return hands.size();
     }
 
     public int getIndexOfDeck(Deck deck)
     {
-        return decks.indexOf(deck);
+        return hands.indexOf(deck);
     }
 
     public int getChips()
@@ -147,9 +147,9 @@ public class Player
         this.winnings = winnings;
     }
 
-    public int getMaxNumberOfSplitDecks()
+    public int getMaxNumberOfHands()
     {
-        return maxNumberOfSplitDecks;
+        return maxNumberOfHands;
     }
 
     public int getNumberOfActiveDecks()
@@ -162,31 +162,31 @@ public class Player
         numberOfActiveDecks++;
     }
 
-    public int getActiveDeckIndex()
+    public int getCurrentDeckIndex()
     {
-        return activeDeckIndex;
+        return currentDeckIndex;
     }
 
-    public void setActiveDeckIndex(int activeDeckIndex)
+    public void setCurrentDeckIndex(int currentDeckIndex)
     {
-        this.activeDeckIndex = activeDeckIndex;
+        this.currentDeckIndex = currentDeckIndex;
     }
 
-    public void incrementActiveDeckIndex()
+    public void incrementCurrentDeckIndex()
     {
-        activeDeckIndex++;
+        currentDeckIndex++;
     }
 
-    public void decrementActiveDeckIndex()
+    public void decrementCurrentDeckIndex()
     {
-        activeDeckIndex--;
+        currentDeckIndex--;
     }
 
     public boolean isAnotherDeck()
     {
-        if (activeDeckIndex == 0) return false;
+        if (currentDeckIndex == 0) return false;
 
-        if (decks.get(activeDeckIndex - 1).isInitiated())
+        if (hands.get(currentDeckIndex - 1).isActive())
         {
             return true;
         }
@@ -198,7 +198,7 @@ public class Player
 
     public void checkForBlackjackInDeck(int deckIndex)
     {
-        Deck deck = decks.get(deckIndex);
+        Deck deck = hands.get(deckIndex);
 
         if (deck.getValueOfCards() == 21 && deck.getDeckSize() == 2)
         {
@@ -208,14 +208,14 @@ public class Player
 
     public boolean hasBlackjackInDeck(int deckIndex)
     {
-        return decks.get(deckIndex).hasBlackjack();
+        return hands.get(deckIndex).hasBlackjack();
     }
 
     public boolean hasBlackjackInAllDecks()
     {
-        for (Deck deck : decks)
+        for (Deck deck : hands)
         {
-            if (deck.isInitiated())
+            if (deck.isActive())
             {
                 if (!deck.hasBlackjack())
                 {
@@ -229,7 +229,7 @@ public class Player
 
     public boolean checkForAutoStandInDeck(int deckIndex)
     {
-        Deck deck = decks.get(deckIndex);
+        Deck deck = hands.get(deckIndex);
 
         if (deck.getValueOfCards() == 21 && deck.getDeckSize() > 2)
         {
@@ -241,12 +241,12 @@ public class Player
 
     public boolean hasDoubledDownInDeck(int deckIndex)
     {
-        return decks.get(deckIndex).hasDoubledDown();
+        return hands.get(deckIndex).hasDoubledDown();
     }
 
     public void checkForBustInDeck(int deckIndex)
     {
-        Deck deck = decks.get(deckIndex);
+        Deck deck = hands.get(deckIndex);
 
         if (deck.getValueOfCards() > 21)
         {
@@ -256,14 +256,14 @@ public class Player
 
     public boolean hasBustedInDeck(int deckIndex)
     {
-        return decks.get(deckIndex).hasBusted();
+        return hands.get(deckIndex).hasBusted();
     }
 
     public boolean hasBustedInAllDecks()
     {
-        for (Deck deck : decks)
+        for (Deck deck : hands)
         {
-            if (deck.isInitiated())
+            if (deck.isActive())
             {
                 if (!deck.hasBusted())
                 {
@@ -277,27 +277,27 @@ public class Player
 
     public int getValueOfCardsInDeck(int deckIndex)
     {
-        return decks.get(deckIndex).getValueOfCards();
+        return hands.get(deckIndex).getValueOfCards();
     }
 
     public int getSizeOfDeck(int deckIndex)
     {
-        return decks.get(deckIndex).getDeckSize();
+        return hands.get(deckIndex).getDeckSize();
     }
 
     public void setDoubledDownToTrueInDeck(int deckIndex)
     {
-        decks.get(deckIndex).setDoubledDown(true);
+        hands.get(deckIndex).setDoubledDown(true);
     }
 
     public boolean canDoubleDownDeck(int deckIndex)
     {
-        return decks.get(deckIndex).canDoubleDown();
+        return hands.get(deckIndex).canDoubleDown();
     }
 
     public boolean canSplitDeck(int deckIndex)
     {
-        if (decks.get(deckIndex).canSplit() && getNumberOfActiveDecks() < maxNumberOfSplitDecks)
+        if (hands.get(deckIndex).canSplit() && getNumberOfActiveDecks() < maxNumberOfHands)
         {
             return true;
         }
@@ -307,7 +307,7 @@ public class Player
 
     public void swapDecks(int indexOfFirstDeck, int indexOfSecondDeck) // hands
     {
-        Collections.swap(decks, indexOfFirstDeck, indexOfSecondDeck);
+        Collections.swap(hands, indexOfFirstDeck, indexOfSecondDeck);
     }
 
     public boolean hasPlacedBet()
@@ -328,13 +328,13 @@ public class Player
 
     public void reset()
     {
-        for (Deck deck : decks)
+        for (Deck deck : hands)
         {
             deck.reset();
         }
 
-        activeDeckIndex = getMaxNumberOfSplitDecks() / 2 - 1;
-        decks.get(activeDeckIndex).initiate();
+        currentDeckIndex = getMaxNumberOfHands() / 2 - 1;
+        hands.get(currentDeckIndex).setActive(true);
         
         numberOfActiveDecks = 1;
         hasPlacedBet = false;

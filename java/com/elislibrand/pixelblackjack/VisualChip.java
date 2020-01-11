@@ -5,14 +5,14 @@ import java.awt.Image;
 public class VisualChip
 {
     private Image image;
-    private int xPos;
-    private int yPos;
+    private int x;
+    private int y;
 
-    public VisualChip(Image image, int xPos, int yPos)
+    public VisualChip(Image image, int x, int y)
     {
         this.image = image;
-        this.xPos = xPos;
-        this.yPos = yPos;
+        this.x = x;
+        this.y = y;
     }
 
     public Image getImage()
@@ -20,13 +20,13 @@ public class VisualChip
         return this.image;
     }
 
-    public int getXPos()
+    public int getX()
     {
-        return this.xPos;
+        return this.x;
     }
 
-    public int getYPos()
+    public int getY()
     {
-        return this.yPos;
+        return this.y;
     }
 }

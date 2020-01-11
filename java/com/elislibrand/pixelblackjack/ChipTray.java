@@ -100,14 +100,14 @@ public class ChipTray
         
     }
 
-    private void createVisualChips(Chip chip, int initialQuantity, int totalQuantity, int xPos)
+    private void createVisualChips(Chip chip, int initialQuantity, int totalQuantity, int x)
     {
         if (totalQuantity == 0) return;
 
         int imageIndex = random.nextInt(((chip.getNumberOfImages() - 1) - 0) + 1) + 0;
         int prevImageIndex = imageIndex;
 
-        int yPos = leftChipStartingPos.y /* <- CHANGE */ + (initialQuantity * chipOffset.y);
+        int y = leftChipStartingPos.y /* <- CHANGE */ + (initialQuantity * chipOffset.y);
 
         for (int i = initialQuantity; i < totalQuantity; i++)
         {
@@ -119,9 +119,9 @@ public class ChipTray
 
             prevImageIndex = imageIndex;
 
-            visualChips.add(new VisualChip(chip.getImage(imageIndex), xPos, yPos));
+            visualChips.add(new VisualChip(chip.getImage(imageIndex), x, y));
 
-            yPos += chipOffset.y;
+            y += chipOffset.y;
         }
     }
 

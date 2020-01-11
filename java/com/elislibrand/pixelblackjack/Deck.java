@@ -9,27 +9,28 @@ import javax.swing.ImageIcon;
 
 public class Deck
 {
-    private List<Card> cards = new ArrayList<Card>();
-    private List<Integer> visualCardIndexes = new ArrayList<Integer>();
+    private List<Card> cards;
+    private List<Integer> visualCardIndexes;
 
     private boolean hasBlackjack = false;
     private boolean hasBusted = false;
     private boolean hasDoubledDown = false;
-    private boolean isInitiated = false;
+    private boolean isActive = false;
 
     public Deck()
     {
-        this.cards = new ArrayList<Card>();
+        cards = new ArrayList<Card>();
+        visualCardIndexes = new ArrayList<Integer>();
     }
 
-    public boolean isInitiated()
+    public boolean isActive()
     {
-        return isInitiated;
+        return isActive;
     }
 
-    public void initiate()
+    public void setActive(boolean isActive)
     {
-        isInitiated = true;
+        this.isActive = isActive;
     }
 
     public void createFullDeck()
@@ -47,22 +48,22 @@ public class Deck
 
     public void shuffle()
     {   
-        Collections.shuffle(this.cards);
+        Collections.shuffle(cards);
     }
 
-    public Card getCard(int cardIndex)
+    public Card getCard(int index)
     {
-        return this.cards.get(cardIndex);
+        return cards.get(index);
     }
 
-    public void removeCard(int cardIndex)
+    public void removeCard(int index)
     {
-        this.cards.remove(cardIndex);
+        cards.remove(index);
     }
 
     public void addCard(Card card)
     {
-        this.cards.add(card);
+        cards.add(card);
     }
 
     public void drawCardFromDeck(Deck deck)
@@ -105,7 +106,7 @@ public class Deck
         return this.cards.size();
     }
 
-    public void moveAllToDeck(Deck deckToMoveTo)
+    public void moveAllCardsToDeck(Deck deckToMoveTo)
     {
         int thisDeckSize = this.cards.size();
 
@@ -243,7 +244,7 @@ public class Deck
         hasBlackjack = false;
         hasBusted = false;
         hasDoubledDown = false;
-        isInitiated = false;
+        isActive = false;
 
         visualCardIndexes.clear();
     }
