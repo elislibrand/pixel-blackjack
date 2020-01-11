@@ -972,19 +972,21 @@ public class GamePanel extends JPanel implements Runnable
                         }
                         else
                         {
-                            if (gameState == GameState.PLAYER_BET)
-                            {
-                                player.setBetToMax();
-
-                                if (player.getBet() > maxBet)
-                                {
-                                    player.setBet(maxBet);
-                                }
-                            }
-
                             if (gameState == GameState.PLAYER_CHOOSE)
                             {
                                 gameState = GameState.PLAYER_DOUBLE_DOWN;
+                            }
+                        }
+
+                        break;
+                    case KeyEvent.VK_TAB:
+                        if (gameState == GameState.PLAYER_BET)
+                        {
+                            player.setBetToMax();
+
+                            if (player.getBet() > maxBet)
+                            {
+                                player.setBet(maxBet);
                             }
                         }
 

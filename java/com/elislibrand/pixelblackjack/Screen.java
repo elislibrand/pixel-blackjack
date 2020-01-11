@@ -3,9 +3,7 @@ package com.elislibrand.pixelblackjack;
 import java.awt.Dimension;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.awt.Font;
 import java.awt.FontFormatException;
 
