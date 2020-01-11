@@ -64,15 +64,18 @@ public class GamePanel extends JPanel implements Runnable
     private final Point chipSplitOffset = new Point((2 * cardSize.width) - (3 * scale), 0);
     private final Point chipDoubleDownOffset = new Point(chipSize.width + (3 * scale), 0);
 
-    private final int splitOffsetX = (2 * cardSize.width) + (1 * scale);
-    private final int splitMarginX = (screenSize.width - (splitOffsetX * (player.getMaxNumberOfHands() - 1) + cardSize.width)) / 2;
-    
     private final int minBet = 1;
     private final int maxBet = 100000;
     private final int numberOfDecks = 6;
 
-    private boolean canClearBoard = false;
+    private final int splitOffsetX = (2 * cardSize.width) + (1 * scale);
+    private final int splitMarginX = (screenSize.width - (splitOffsetX * (player.getMaxNumberOfHands() - 1) + cardSize.width)) / 2;
+    
+    private int splitDirection;
+    private int splitIndexToMoveTo;
+    private int movesNeeded;
 
+    private boolean canClearBoard = false;
     private boolean debugMode = false;
 
     private Image cardFaceDown;
@@ -325,10 +328,6 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
-    private int splitDirection;
-    private int splitIndexToMoveTo;
-    private int movesNeeded;
-
     private void split()
     {
         if (!animator.isPlaying())
@@ -340,12 +339,9 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case MOVE_HANDS:
-                    //System.out.println("\nMoves needed in case 1: " + movesNeeded);
-
                     if (movesNeeded > 0)
                     {
                         shiftSplitCards();
-                        //System.out.println("Moving card!");
 
                         movesNeeded--;
                         splitStage = splitStage.previous();
@@ -373,12 +369,12 @@ public class GamePanel extends JPanel implements Runnable
                     player.getHand(player.getCurrentHandIndex()).moveLastVisualCardIndexToHand(player.getHand(player.getCurrentHandIndex() + splitDirection));
 
                     break;
-                case DRAW_CARD_TO_RIGHT_HAND:
-                    drawCard(player.getHand(player.getCurrentHandIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getCurrentHandIndex() + splitDirection), false, false);
-                    
+                case DRAW_FIRST_CARD:
+                    drawCardAfterSplit();
+
                     break;
-                case DRAW_CARD_TO_LEFT_HAND:
-                    drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, false);
+                case DRAW_SECOND_CARD:
+                    drawCardAfterSplit();
                     
                     break;
                 case CHANGE_GAME_STATE:
@@ -403,12 +399,8 @@ public class GamePanel extends JPanel implements Runnable
         player.incrementNumberOfActiveHands();
 
         splitDirection = getSplitDirection();
-        //System.out.println("\nDirection of split: " + splitDirection);
         splitIndexToMoveTo = getSplitIndexToMoveTo();
-        //System.out.println("Empty slot at index: " + splitIndexToMoveTo);
-
         movesNeeded = Math.abs(player.getCurrentHandIndex() - splitIndexToMoveTo) - 1;
-        //System.out.println("Moves needed: " + movesNeeded);
     }
 
     private int getSplitDirection()
@@ -422,7 +414,6 @@ public class GamePanel extends JPanel implements Runnable
         {
             for (int i = player.getCurrentHandIndex() + 1; i < player.getMaxNumberOfHands(); i++) 
             {
-
                 if (!player.getHand(i).isActive())
                 {
                     return 1;
@@ -435,7 +426,6 @@ public class GamePanel extends JPanel implements Runnable
         {
             for (int i = player.getCurrentHandIndex() - 1; i >= 0; i--)
             {
-
                 if (!player.getHand(i).isActive())
                 {
                     return -1;
@@ -482,44 +472,31 @@ public class GamePanel extends JPanel implements Runnable
 
     private void shiftSplitCards()
     {
-        int handToShiftIndex;
-
-        if (splitDirection == 1)
-        {
-            handToShiftIndex = player.getCurrentHandIndex() + movesNeeded;
+        int handToShiftIndex = player.getCurrentHandIndex() + (movesNeeded * splitDirection);
             
-            for (int i = 0; i < player.getHand(handToShiftIndex).getNumberOfCards(); i++) // Move all cards in the hand to be shifted
-            {
-                int visualCardIndex = player.getHand(handToShiftIndex).getVisualCardIndex(i);
-                //System.out.println("Visual card " + i + " in hand " + handToShiftIndex + " has visualCardIndex: " + visualCardIndex);
+        for (int i = 0; i < player.getHand(handToShiftIndex).getNumberOfCards(); i++) // Move all cards in the hand to be shifted
+        {
+            int visualCardIndex = player.getHand(handToShiftIndex).getVisualCardIndex(i);
 
-                Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
-                Point destinationPos = new Point(startingPos.x + splitOffsetX, startingPos.y);
+            Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
+            Point destinationPos = new Point(startingPos.x + (splitOffsetX * splitDirection), startingPos.y);
 
-                animator.start(startingPos, destinationPos, visualCardIndex);
-            }
+            animator.start(startingPos, destinationPos, visualCardIndex);
+        }
 
-            player.swapHands(handToShiftIndex, handToShiftIndex + 1);
+        player.swapHands(handToShiftIndex, handToShiftIndex + splitDirection);
+    }
+
+    private void drawCardAfterSplit()
+    {
+        if ((splitDirection == 1 && splitStage == SplitStage.DRAW_FIRST_CARD) || (splitDirection == -1 && splitStage == SplitStage.DRAW_SECOND_CARD))
+        {
+            drawCard(player.getHand(player.getCurrentHandIndex() + splitDirection), getNextSplitPlayerCardPosition(player.getCurrentHandIndex() + splitDirection), false, false);
         }
         else
         {
-            handToShiftIndex = player.getCurrentHandIndex() - movesNeeded;
-
-            for (int i = 0; i < player.getHand(handToShiftIndex).getNumberOfCards(); i++)
-            {
-                int visualCardIndex = player.getHand(handToShiftIndex).getVisualCardIndex(i);
-                //System.out.println("Visual card " + i + " in hand " + handToShiftIndex + " has visualCardIndex: " + visualCardIndex);
-
-                Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
-                Point destinationPos = new Point(startingPos.x - splitOffsetX, startingPos.y);
-
-                animator.start(startingPos, destinationPos, visualCardIndex);
-            }
-
-            player.swapHands(handToShiftIndex, handToShiftIndex - 1);
+            drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, false);
         }
-
-        //System.out.println("Index of hand to be shifted: " + handToShiftIndex);
     }
 
     private boolean canDoubleDown()
@@ -596,7 +573,7 @@ public class GamePanel extends JPanel implements Runnable
         {
             revealFaceDownCard();
             
-            if (dealerHand.getValueOfCards() < 17 && !player.isBustedInAllHands() && !player.isBlackjackInAllHands())
+            if (dealerHand.getValueOfCards() < 17 && !player.isBlackjackOrBustedInAllHands())
             {
                 drawCard(dealerHand, getNextDealerCardPosition(), false, false);
             }
@@ -838,25 +815,25 @@ public class GamePanel extends JPanel implements Runnable
 
         if (debugMode)
         {
-            g.setColor(Color.WHITE);
-            g.drawString("Pixel Blackjack v2.2.1 [multiple splits added and bug fixes]", 12, 24);
-            g.drawString("Player chips: " + player.getChips(), 12, 48);
-            g.drawString("Player bet: " + player.getBet(), 12, 72);
-            g.drawString("Player winnings: " + player.getWinnings(), 12, 96);
-            g.drawString("Current hand: " + player.getCurrentHandIndex(), 12, 120);
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("Pixel Blackjack v2.2.4 [minor changes in button layout]", 12, 24);
+            g2d.drawString("Player chips: " + player.getChips(), 12, 48);
+            g2d.drawString("Player bet: " + player.getBet(), 12, 72);
+            g2d.drawString("Player winnings: " + player.getWinnings(), 12, 96);
+            g2d.drawString("Current hand: " + player.getCurrentHandIndex(), 12, 120);
         
             int count = 0;
 
             for (VisualCard visualCard : visualCards)
             {
-                g.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
+                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
 
                 count++;
             }
 
             for (int i = 0; i < player.getMaxNumberOfHands(); i++)
             {
-                g.setColor(Color.BLACK);
+                g2d.setColor(Color.BLACK);
                 g2d.setStroke(new BasicStroke(scale));
                 g2d.drawRect(splitMarginX + (i * splitOffsetX) - (int)Math.ceil(((double)scale / 2)), playerCardStartingPos.y - (int)Math.ceil(((double)scale / 2)), cardSize.width + scale, cardSize.height + scale);
             }
@@ -986,20 +963,27 @@ public class GamePanel extends JPanel implements Runnable
                         }
 
                         break;
-                    case KeyEvent.VK_TAB:
-                        if (gameState == GameState.PLAYER_BET)
+                    case KeyEvent.VK_D:
+                        if (e.isControlDown() && e.isAltDown())
                         {
-                            player.setBetToMax();
-
-                            if (player.getBet() > maxBet)
-                            {
-                                player.setBet(maxBet);
-                            }
+                            debugMode = !debugMode;
                         }
-
-                        if (gameState == GameState.PLAYER_CHOOSE)
+                        else
                         {
-                            gameState = GameState.PLAYER_DOUBLE_DOWN;
+                            if (gameState == GameState.PLAYER_BET)
+                            {
+                                player.setBetToMax();
+
+                                if (player.getBet() > maxBet)
+                                {
+                                    player.setBet(maxBet);
+                                }
+                            }
+
+                            if (gameState == GameState.PLAYER_CHOOSE)
+                            {
+                                gameState = GameState.PLAYER_DOUBLE_DOWN;
+                            }
                         }
 
                         break;
@@ -1013,7 +997,7 @@ public class GamePanel extends JPanel implements Runnable
                         }
 
                         break;
-                    case KeyEvent.VK_E:
+                    case KeyEvent.VK_S:
                         if (gameState == GameState.PLAYER_CHOOSE && canSplit())
                         {
                             splitStage = SplitStage.INITIATE;
@@ -1065,10 +1049,6 @@ public class GamePanel extends JPanel implements Runnable
                         }
 
                         break;
-                    case KeyEvent.VK_D:
-                        debugMode = !debugMode;
-
-                        break;
                     case KeyEvent.VK_ESCAPE:
                         if (gameState == GameState.PLAYER_BET)
                         {
@@ -1076,14 +1056,12 @@ public class GamePanel extends JPanel implements Runnable
                         }
 
                         break;
-                    default:
-                        break;
                 }
             }
         }
     }
 
-    private class Animator // Fucks up the positions slightly
+    private class Animator
     {
         private boolean isPlaying = false;
 
@@ -1095,9 +1073,10 @@ public class GamePanel extends JPanel implements Runnable
 
         private List<Integer> indexesInArrayList = new ArrayList<Integer>();
 
+        private final double durationInSeconds = 0.435;
+
         private int count;
         private double progress;
-        private double durationInSeconds = 0.435;
 
         public boolean isPlaying()
         {
@@ -1123,18 +1102,13 @@ public class GamePanel extends JPanel implements Runnable
                     
                         currentPositions.get(i).setLocation((int)Math.round(newPosX), (int)Math.round(newPosY));
 
-                        System.out.println("newPosX: " + (int)Math.round(newPosX));
-                        System.out.println("newPosY: " + (int)Math.round(newPosY));
-
                         visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
                         visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
                     }
                     else
                     {
-                        /* currentPositions.get(i).setLocation(destinationPositions.get(i));
-
-                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
-                        visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y); */
+                        visualCards.get(indexesInArrayList.get(i)).setX(destinationPositions.get(i).x);
+                        visualCards.get(indexesInArrayList.get(i)).setY(destinationPositions.get(i).y);
 
                         if (i == startingPositions.size() - 1)
                         {

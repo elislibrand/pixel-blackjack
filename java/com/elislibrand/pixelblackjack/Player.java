@@ -217,22 +217,6 @@ public class Player
         return hands.get(index).isBlackjack();
     }
 
-    public boolean isBlackjackInAllHands()
-    {
-        for (Hand hand : hands)
-        {
-            if (hand.isActive())
-            {
-                if (!hand.isBlackjack())
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
     public boolean shouldAutoStandInHand(int index)
     {
         Hand hand = hands.get(index);
@@ -265,13 +249,13 @@ public class Player
         return hands.get(index).isBusted();
     }
 
-    public boolean isBustedInAllHands()
+    public boolean isBlackjackOrBustedInAllHands()
     {
         for (Hand hand : hands)
         {
             if (hand.isActive())
             {
-                if (!hand.isBusted())
+                if (!hand.isBlackjack() && !hand.isBusted())
                 {
                     return false;
                 }
