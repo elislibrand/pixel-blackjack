@@ -815,18 +815,19 @@ public class GamePanel extends JPanel implements Runnable
 
         if (debugMode)
         {
+            g2d.setFont(Screen.FONT);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("Pixel Blackjack v2.2.4 [minor changes in button layout]", 12, 24);
-            g2d.drawString("Player chips: " + player.getChips(), 12, 48);
-            g2d.drawString("Player bet: " + player.getBet(), 12, 72);
-            g2d.drawString("Player winnings: " + player.getWinnings(), 12, 96);
-            g2d.drawString("Current hand: " + player.getCurrentHandIndex(), 12, 120);
+            g2d.drawString("Pixel Blackjack v2.3.0", (6 * scale), (11 * scale));
+            g2d.drawString("Player chips: " + player.getChips(), (6 * scale), (22 * scale));
+            g2d.drawString("Player bet: " + player.getBet(), (6 * scale), (30 * scale));
+            g2d.drawString("Player winnings: " + player.getWinnings(), (6 * scale), (38 * scale));
+            g2d.drawString("Current hand: " + player.getCurrentHandIndex(), (6 * scale), (46 * scale));
         
             int count = 0;
 
             for (VisualCard visualCard : visualCards)
             {
-                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - 20);
+                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - (2 * scale));
 
                 count++;
             }
@@ -871,19 +872,20 @@ public class GamePanel extends JPanel implements Runnable
             {
                 AffineTransform rotatedCard = AffineTransform.getTranslateInstance(visualCard.getX() + cardSize.height, visualCard.getY());
                 AffineTransform rotatedShadow = AffineTransform.getTranslateInstance(visualCard.getX() + cardSize.height + scale, visualCard.getY() - scale);
+                
                 rotatedCard.rotate(Math.PI / 2);
                 rotatedShadow.rotate(Math.PI / 2);
                 rotatedCard.scale(scale, scale);
                 rotatedShadow.scale(scale, scale);
 
                 g2d.drawImage(cardShadow, rotatedShadow, null);
-                g2d.drawImage(visualCard.getImage(), rotatedCard, null);
+                g2d.drawImage(visualCard.getImage(), rotatedCard, null); 
             }
             else
             {
                 g2d.drawImage(cardShadow, visualCard.getX() - scale, visualCard.getY() - scale, cardShadowSize.width, cardShadowSize.height, null);
                 g2d.drawImage(visualCard.getImage(), visualCard.getX(), visualCard.getY(), cardSize.width, cardSize.height, null);
-            }            
+            }
         }
 
         for (VisualChip visualChip : visualChips)
