@@ -13,7 +13,7 @@ public class Player
     private int initialBet;
     private int winnings;
 
-    private final int maxNumberOfHands = 6; // Must be an even number
+    private final int maxNumberOfHands = 8; // Must be an even number
     private int numberOfActiveHands;
     private int currentHandIndex;
 

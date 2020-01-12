@@ -23,20 +23,32 @@ public class Screen
     static
     {
         RESOLUTION = new Dimension(DEVICE.getDisplayMode().getWidth(), DEVICE.getDisplayMode().getHeight());
-        REFRESH_RATE = DEVICE.getDisplayMode().getRefreshRate(); // equals 0 if not found
+        REFRESH_RATE = getRefreshRate();
         BIT_DEPTH = DEVICE.getDisplayMode().getBitDepth();
         SCALE = getScale();
-        WIDTH = 480 * SCALE;
-        HEIGHT = 270 * SCALE;
+        WIDTH = 640 * SCALE;
+        HEIGHT = 360 * SCALE;
         FONT = getFont();
 
         System.out.println(FONT);
     }
 
+    private final static int getRefreshRate()
+    {
+        int refreshRate = DEVICE.getDisplayMode().getRefreshRate();
+
+        if (refreshRate <= 0)
+        {
+            refreshRate = 60;
+        }
+
+        return refreshRate;
+    }
+
     private final static int getScale()
     {
-        int scaleWidth = (int)(RESOLUTION.width / 480);
-        int scaleHeight = (int)(RESOLUTION.height / 270);
+        int scaleWidth = (int)(RESOLUTION.width / 640);
+        int scaleHeight = (int)(RESOLUTION.height / 360);
 
         int scale = (scaleWidth < scaleHeight) ? scaleWidth : scaleHeight;
         

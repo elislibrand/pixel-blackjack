@@ -44,17 +44,16 @@ public class GamePanel extends JPanel implements Runnable
     private final Dimension chipInChipTraySize = new Dimension(21 * scale, 2 * scale);
     private final Dimension chipShadowSize = new Dimension(23 * scale, 23 * scale);
     private final Dimension betSquareSize = new Dimension(44 * scale, 58 * scale);
-    private final Dimension chipTraySize = new Dimension(121 * scale, 58 * scale);
-    private final Dimension chipTrayShadowSize = new Dimension(123 * scale, 60 * scale);
+    private final Dimension dealerTraySize = new Dimension(190 * scale, 88 * scale);
+    private final Dimension infoTextAreaSize = new Dimension(95 * scale, 19 * scale);
+    private final Dimension arrowSize = new Dimension(5 * scale, 5 * scale);
 
     private final Point playerCardStartingPos = new Point((screenSize.width / 2) - ((int)((cardSize.width / scale) / 2) * scale) - (1 * scale), // There is room for a number under the card, displaying the hand's value
-                                                          screenSize.height - cardSize.height - betSquareSize.height - (20 * scale));           // (3 * scale) pixels margin top and bottom from the number ?
-    private final Point dealerCardStartingPos = new Point((screenSize.width / 2) + (2 * scale), 10 * scale);
-    private final Point betSquarePos = new Point((screenSize.width / 2) - (betSquareSize.width / 2), screenSize.height - (10 * scale) - betSquareSize.height);
-    private final Point leftChipTrayPos = new Point(20 * scale, screenSize.height - (10 * scale) - betSquareSize.height);
-    private final Point rightChipTrayPos = new Point(screenSize.width - (20 * scale) - chipTraySize.width, screenSize.height - (10 * scale) - betSquareSize.height);
-    private final Point leftChipTrayShadowPos = new Point(leftChipTrayPos.x - scale, leftChipTrayPos.y - scale);
-    private final Point rightChipTrayShadowPos = new Point(rightChipTrayPos.x - scale, rightChipTrayPos.y - scale);
+                                                          screenSize.height - cardSize.height - betSquareSize.height - (21 * scale));           // (3 * scale) pixels margin top and bottom from the number ?
+    private final Point dealerCardStartingPos = new Point((screenSize.width / 2) + (2 * scale), dealerTraySize.height + (20 * scale));
+    private final Point betSquarePos = new Point((screenSize.width / 2) - (betSquareSize.width / 2), screenSize.height - betSquareSize.height - (10 * scale));
+    private final Point dealerTrayPos = new Point((screenSize.width / 2) - (dealerTraySize.width / 2), (10 * scale));
+    private final Point infoTextAreaPos = new Point(screenSize.width - infoTextAreaSize.width - (46 * scale), (10 * scale));
     private final Point chipStartingPos = new Point((screenSize.width / 2) - (chipSize.width / 2) - (6 * scale),
                                                     screenSize.height - (betSquareSize.height / 2) - (chipSize.height / 2) - ((1 * scale) - 1) + (2 * scale)); // Top-left
     private final Point chipShadowStartingPos = new Point(chipStartingPos.x - scale, chipStartingPos.y - scale);
@@ -82,11 +81,12 @@ public class GamePanel extends JPanel implements Runnable
     private Image cardShadow;
     private Image chipShadow;
     private Image betSquare;
-    private Image chipTrayImg;
-    private Image chipTrayShadowImg;
+    private Image arrow;
+    private Image dealerTray;
+    private Image infoTextArea;
     private Image chipInBetSquare;
     
-    private final ChipTray chipTray = new ChipTray(player.getChips());;
+    //private final ChipTray chipTray = new ChipTray(player.getChips());
 
     private final Deck playingDeck = new Deck();
     private final Deck usedDeck = new Deck();
@@ -119,8 +119,9 @@ public class GamePanel extends JPanel implements Runnable
         cardShadow = new ImageIcon(getClass().getResource("/assets/cards/shadow.png")).getImage();
         chipShadow = new ImageIcon(getClass().getResource("/assets/chips/shadow.png")).getImage();
         betSquare = new ImageIcon(getClass().getResource("/assets/props/bet_square.png")).getImage();
-        chipTrayImg = new ImageIcon(getClass().getResource("/assets/props/chip_tray.png")).getImage();
-        chipTrayShadowImg = new ImageIcon(getClass().getResource("/assets/props/chip_tray_shadow.png")).getImage();
+        dealerTray = new ImageIcon(getClass().getResource("/assets/props/dealer_tray.png")).getImage();
+        infoTextArea = new ImageIcon(getClass().getResource("/assets/props/info_text_area.png")).getImage();
+        arrow = new ImageIcon(getClass().getResource("/assets/props/arrow.png")).getImage();
     }
 
     private final void initializeGame()
@@ -132,7 +133,7 @@ public class GamePanel extends JPanel implements Runnable
         createAllPlayerHands();
         activateHands();
         createPlayingDeck();
-        sortChipTray();
+        //sortChipTray();
 
         gameState = GameState.SHUFFLE_DECK;
     }
@@ -163,12 +164,12 @@ public class GamePanel extends JPanel implements Runnable
     {
         audioManager.play(Audio.CHIPS_SINGLE_DROP);
 
-        chipInBetSquare = chipTray.getTopDownImage(player.getBet());
+        //chipInBetSquare = chipTray.getTopDownImage(player.getBet());
         
         player.placeBet();
         player.setPlacedBet(true);
 
-        sortChipTray(); //removeFromChipTray
+        //sortChipTray(); //removeFromChipTray
 
         gameState = GameState.RECEIVE_CARDS;
     }
@@ -523,7 +524,7 @@ public class GamePanel extends JPanel implements Runnable
     {
         player.doubleBet();
         
-        sortChipTray();
+        //sortChipTray();
     }
 
     private void goToNextHand()
@@ -593,7 +594,7 @@ public class GamePanel extends JPanel implements Runnable
     private void endRound()
     {
         determineWinner();
-        addToChipTray(player.getWinnings());
+        //addToChipTray(player.getWinnings());
         
         gameState = GameState.CLEAR_BOARD;
     }
@@ -710,7 +711,7 @@ public class GamePanel extends JPanel implements Runnable
         gameState = GameState.PLAYER_BET;
     }
 
-    private void sortChipTray()
+    /* private void sortChipTray()
     {
         chipTray.sort(player.getChips());
         visualChips = chipTray.getVisualChips();
@@ -722,7 +723,7 @@ public class GamePanel extends JPanel implements Runnable
         visualChips = chipTray.getVisualChips();
     }
 
-    /* private void removeFromChipTray(int valueOfChipsToRemove)
+    private void removeFromChipTray(int valueOfChipsToRemove)
     {
         chipTray.remove(valueOfChipsToRemove);
         visualChips = chipTray.getVisualChips();
@@ -813,20 +814,21 @@ public class GamePanel extends JPanel implements Runnable
     {
         Graphics2D g2d = (Graphics2D)g;
 
+        g2d.setFont(Screen.FONT);
+
         if (debugMode)
         {
-            g2d.setFont(Screen.FONT);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("Pixel Blackjack v2.3.0", (6 * scale), (11 * scale));
-            g2d.drawString("Player chips: " + player.getChips(), (6 * scale), (22 * scale));
-            g2d.drawString("Player bet: " + player.getBet(), (6 * scale), (30 * scale));
-            g2d.drawString("Player winnings: " + player.getWinnings(), (6 * scale), (38 * scale));
-            g2d.drawString("Current hand: " + player.getCurrentHandIndex(), (6 * scale), (46 * scale));
+
+            g2d.drawString("Pixel Blackjack v2.4.0", (20 * scale), (15 * scale));
+            g2d.drawString("Player winnings: " + player.getWinnings(), (20 * scale), (30 * scale));
+            g2d.drawString("Current hand: " + player.getCurrentHandIndex(), (20 * scale), (38 * scale));
         
             int count = 0;
 
             for (VisualCard visualCard : visualCards)
             {
+                g2d.drawImage(arrow, visualCard.getX() + (cardSize.width / 2) - (arrowSize.width / 2), visualCard.getY() + cardSize.height + (3 * scale), arrowSize.width, arrowSize.height, null);
                 g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - (2 * scale));
 
                 count++;
@@ -840,15 +842,30 @@ public class GamePanel extends JPanel implements Runnable
             }
         }
 
+        // Props
         g2d.drawImage(betSquare, betSquarePos.x, betSquarePos.y, betSquareSize.width, betSquareSize.height, null);
+        g2d.drawImage(dealerTray, dealerTrayPos.x, dealerTrayPos.y, dealerTraySize.width, dealerTraySize.height, null);
+        g2d.drawImage(infoTextArea, infoTextAreaPos.x, infoTextAreaPos.y, infoTextAreaSize.width, infoTextAreaSize.height, null);
 
-        g2d.drawImage(chipTrayShadowImg, leftChipTrayShadowPos.x, leftChipTrayShadowPos.y, chipTrayShadowSize.width, chipTrayShadowSize.height, null);
-        g2d.drawImage(chipTrayImg, leftChipTrayPos.x, leftChipTrayPos.y, chipTraySize.width, chipTraySize.height, null);
+        // Text
+        g2d.setColor(Color.WHITE);
 
-        g2d.drawImage(chipTrayShadowImg, rightChipTrayShadowPos.x, rightChipTrayShadowPos.y, chipTrayShadowSize.width, chipTrayShadowSize.height, null);
-        g2d.drawImage(chipTrayImg, rightChipTrayPos.x, rightChipTrayPos.y, chipTraySize.width, chipTraySize.height, null);
+        g2d.drawString("Chips: ", infoTextAreaPos.x + (3 * scale), infoTextAreaPos.y + (8 * scale));
+        g2d.drawString("Bet:    ", infoTextAreaPos.x + (3 * scale), infoTextAreaPos.y + (16 * scale));
+        
+        g2d.setColor(new Color(242, 204, 98));
 
-        if (player.hasPlacedBet())
+        g2d.drawString(Integer.toString(player.getChips()), infoTextAreaPos.x + (3 * scale) + (22 * scale), infoTextAreaPos.y + (8 * scale));
+        g2d.drawString(Integer.toString(player.getBet()), infoTextAreaPos.x + (3 * scale)  + (22 * scale), infoTextAreaPos.y + (16 * scale));
+
+
+        //g2d.drawImage(chipTrayShadowImg, leftChipTrayShadowPos.x, leftChipTrayShadowPos.y, chipTrayShadowSize.width, chipTrayShadowSize.height, null);
+        //g2d.drawImage(chipTrayImg, leftChipTrayPos.x, leftChipTrayPos.y, chipTraySize.width, chipTraySize.height, null);
+
+        //g2d.drawImage(chipTrayShadowImg, rightChipTrayShadowPos.x, rightChipTrayShadowPos.y, chipTrayShadowSize.width, chipTrayShadowSize.height, null);
+        //g2d.drawImage(chipTrayImg, rightChipTrayPos.x, rightChipTrayPos.y, chipTraySize.width, chipTraySize.height, null);
+
+        /* if (player.hasPlacedBet())
         {
             for (int i = 0; i < (player.getNumberOfHands()); i++) // CHANGE CHIP POSITIONS BELOW
             {
@@ -864,7 +881,7 @@ public class GamePanel extends JPanel implements Runnable
                     g2d.drawImage(chipInBetSquare, chipStartingPos.x + (chipSplitOffset.x * i), chipStartingPos.y, chipSize.width, chipSize.height, null);
                 }
             }
-        }
+        } */
 
         for (VisualCard visualCard : visualCards)
         {   
@@ -888,10 +905,10 @@ public class GamePanel extends JPanel implements Runnable
             }
         }
 
-        for (VisualChip visualChip : visualChips)
+        /* for (VisualChip visualChip : visualChips)
         {
             g2d.drawImage(visualChip.getImage(), visualChip.getX(), visualChip.getY(), chipInChipTraySize.width, chipInChipTraySize.height, null);
-        }
+        } */
     }
 
     @Override
