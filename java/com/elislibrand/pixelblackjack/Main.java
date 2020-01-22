@@ -27,12 +27,13 @@ public class Main extends JFrame
 
         setResizable(false);
         setUndecorated(true);
-
+        
         pack();
 
         setTitle("Pixel Blackjack");
-        //setIconImage(new ImageIcon("./assets/logo.png").getImage());
         setLocationRelativeTo(null);
+        //setIconImage(new ImageIcon("./assets/logo.png").getImage());
+        setCursor(Screen.HIDDEN_CURSOR);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 

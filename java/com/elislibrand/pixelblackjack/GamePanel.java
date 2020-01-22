@@ -1,13 +1,13 @@
 package com.elislibrand.pixelblackjack;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.BasicStroke;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
@@ -50,7 +50,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private final Point playerCardStartingPos = new Point((screenSize.width / 2) - ((int)((cardSize.width / scale) / 2) * scale) - (1 * scale), // There is room for a number under the card, displaying the hand's value
                                                           screenSize.height - cardSize.height - betSquareSize.height - (21 * scale));           // (3 * scale) pixels margin top and bottom from the number ?
-    private final Point dealerCardStartingPos = new Point((screenSize.width / 2) + (2 * scale), dealerTraySize.height + (20 * scale));
+    private final Point dealerCardStartingPos = new Point((screenSize.width / 2) + (2 * scale), dealerTraySize.height + (21 * scale));
     private final Point betSquarePos = new Point((screenSize.width / 2) - (betSquareSize.width / 2), screenSize.height - betSquareSize.height - (10 * scale));
     private final Point dealerTrayPos = new Point((screenSize.width / 2) - (dealerTraySize.width / 2), (10 * scale));
     private final Point infoTextAreaPos = new Point(screenSize.width - infoTextAreaSize.width - (46 * scale), (10 * scale));
@@ -108,7 +108,7 @@ public class GamePanel extends JPanel implements Runnable
         setFocusTraversalKeysEnabled(false);
         setBackground(new Color(48, 102, 60));
         setPreferredSize(new Dimension(Screen.WIDTH, Screen.HEIGHT));
-        
+
         loadImages();
         initializeGame();
     }
@@ -814,10 +814,9 @@ public class GamePanel extends JPanel implements Runnable
     {
         Graphics2D g2d = (Graphics2D)g;
 
-        g2d.setFont(Screen.FONT);
-
         if (debugMode)
         {
+            g2d.setFont(Screen.FONT);
             g2d.setColor(Color.WHITE);
 
             g2d.drawString("Pixel Blackjack v2.4.0", (20 * scale), (15 * scale));
@@ -834,13 +833,20 @@ public class GamePanel extends JPanel implements Runnable
                 count++;
             }
 
+            g2d.setFont(Screen.getScaledFont(3));
+            g2d.setColor(new Color(0, 0, 0, 50));
+
+            String text = "BlackJack pays 3 to 2";
+            g2d.drawString(text, (screenSize.width / 2) - (int)(g2d.getFontMetrics().stringWidth(text) / 2), (screenSize.height / 2) + (int)(Screen.getScaledFont(3).getSize() / 2));
+
             for (int i = 0; i < player.getMaxNumberOfHands(); i++)
             {
-                g2d.setColor(Color.BLACK);
                 g2d.setStroke(new BasicStroke(scale));
                 g2d.drawRect(splitMarginX + (i * splitOffsetX) - (int)Math.ceil(((double)scale / 2)), playerCardStartingPos.y - (int)Math.ceil(((double)scale / 2)), cardSize.width + scale, cardSize.height + scale);
             }
         }
+
+        g2d.setFont(Screen.FONT);
 
         // Props
         g2d.drawImage(betSquare, betSquarePos.x, betSquarePos.y, betSquareSize.width, betSquareSize.height, null);
@@ -857,7 +863,6 @@ public class GamePanel extends JPanel implements Runnable
 
         g2d.drawString(Integer.toString(player.getChips()), infoTextAreaPos.x + (3 * scale) + (22 * scale), infoTextAreaPos.y + (8 * scale));
         g2d.drawString(Integer.toString(player.getBet()), infoTextAreaPos.x + (3 * scale)  + (22 * scale), infoTextAreaPos.y + (16 * scale));
-
 
         //g2d.drawImage(chipTrayShadowImg, leftChipTrayShadowPos.x, leftChipTrayShadowPos.y, chipTrayShadowSize.width, chipTrayShadowSize.height, null);
         //g2d.drawImage(chipTrayImg, leftChipTrayPos.x, leftChipTrayPos.y, chipTraySize.width, chipTraySize.height, null);

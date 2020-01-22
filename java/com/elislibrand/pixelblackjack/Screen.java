@@ -1,11 +1,15 @@
 package com.elislibrand.pixelblackjack;
 
+import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.io.IOException;
 import java.awt.Font;
 import java.awt.FontFormatException;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.image.MemoryImageSource;
+import java.io.IOException;
 
 public class Screen
 {
@@ -19,6 +23,8 @@ public class Screen
     public final static int BIT_DEPTH;
     public final static int SCALE;
     public final static Font FONT;
+    public final static Cursor DEFAULT_CURSOR;
+    public final static Cursor HIDDEN_CURSOR;
 
     static
     {
@@ -29,8 +35,8 @@ public class Screen
         WIDTH = 640 * SCALE;
         HEIGHT = 360 * SCALE;
         FONT = getFont();
-
-        System.out.println(FONT);
+        DEFAULT_CURSOR = getDefaultCursor();
+        HIDDEN_CURSOR = getHiddenCursor();
     }
 
     private final static int getRefreshRate()
@@ -76,5 +82,22 @@ public class Screen
         }
 
         return new Font("Arial", Font.PLAIN, 6 * SCALE);
+    }
+
+    public final static Font getScaledFont(int scalingFactor)
+    {
+        return new Font("PixelBlackjack", Font.PLAIN, (6 * SCALE) * scalingFactor);
+    }
+
+    private final static Cursor getDefaultCursor()
+    {
+        return Cursor.getDefaultCursor();
+    }
+
+    private final static Cursor getHiddenCursor()
+    {
+        return Toolkit.getDefaultToolkit().createCustomCursor(Toolkit.getDefaultToolkit().createImage(new MemoryImageSource(16, 16, new int[16 * 16], 0, 16)),
+                                                              new Point(0, 0),
+                                                              "Hidden");
     }
 }
