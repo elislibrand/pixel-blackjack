@@ -31,7 +31,7 @@ public class GamePanel extends JPanel implements Runnable
     private final AudioManager audioManager = new AudioManager();
     private final TextManager textManager = new TextManager();
 
-    private final List<VisualCard> visualCards = new ArrayList<VisualCard>();
+    private final List<Graphic> graphics = new ArrayList<Graphic>();
     private List<VisualChip> visualChips;
 
     private final Player player = new Player();
@@ -75,6 +75,9 @@ public class GamePanel extends JPanel implements Runnable
     private final int splitOffsetX = (2 * cardSize.width) + (1 * scale);
     private final int splitMarginX = (screenSize.width - (splitOffsetX * (player.getMaxNumberOfHands() - 1) + cardSize.width)) / 2;
     
+    private int cameraY = 0;
+    private int indexOfFirstVisualCardInGraphics;
+
     private int splitDirection;
     private int splitIndexToMoveTo;
     private int movesNeeded;
@@ -89,16 +92,15 @@ public class GamePanel extends JPanel implements Runnable
     private Image dealerTray;
     private Image infoTextArea;
     private Image chipInBetSquare;
+    private Image arrowImage;
 
-    private int cameraY = 0;
-    
     //private final ChipTray chipTray = new ChipTray(player.getChips());
 
     private final Deck playingDeck = new Deck();
     private final Deck usedDeck = new Deck();
     
-    private final Arrow arrow = new Arrow();
-
+    private Graphic arrow;
+    
     public GamePanel()
     {
         initializePanel();
@@ -129,6 +131,7 @@ public class GamePanel extends JPanel implements Runnable
         betSquare = new ImageIcon(getClass().getResource("/assets/props/bet_square.png")).getImage();
         dealerTray = new ImageIcon(getClass().getResource("/assets/props/dealer_tray.png")).getImage();
         infoTextArea = new ImageIcon(getClass().getResource("/assets/props/info_text_area.png")).getImage();
+        arrowImage = new ImageIcon(getClass().getResource("/assets/props/arrow.png")).getImage();
     }
 
     private final void initializeGame()
@@ -140,7 +143,10 @@ public class GamePanel extends JPanel implements Runnable
         createAllPlayerHands();
         activateHands();
         createPlayingDeck();
+        createArrow();
         //sortChipTray();
+
+        indexOfFirstVisualCardInGraphics = graphics.size();
 
         gameState = GameState.SHUFFLE_DECK;
     }
@@ -167,6 +173,12 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
+    private final void createArrow()
+    {
+        arrow = new Arrow(arrowImage, 0, 0, arrowSize.width, arrowSize.height, graphics.size());
+        graphics.add(arrow);
+    }
+
     private void placeBet()
     {
         audioManager.play(Audio.CHIPS_SINGLE_DROP);
@@ -185,9 +197,32 @@ public class GamePanel extends JPanel implements Runnable
     {
         if (!animator.isPlaying())
         {
-            switch (visualCards.size())
+            if (graphics.size() == indexOfFirstVisualCardInGraphics)
             {
-                case 0:
+                drawCard(player.getHand(player.getCurrentHandIndex()), playerCardStartingPos, false, false);
+            }
+            else if (graphics.size() == indexOfFirstVisualCardInGraphics + 1)
+            {
+                drawCard(dealerHand, dealerCardStartingPos, true, false);
+            }
+            else if (graphics.size() == indexOfFirstVisualCardInGraphics + 2)
+            {
+                drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
+            }
+            else if (graphics.size() == indexOfFirstVisualCardInGraphics + 3)
+            {
+                drawCard(dealerHand, new Point(dealerCardStartingPos.x + dealerCardOffset.x, dealerCardStartingPos.y + dealerCardOffset.y), false, false);
+            }
+            else
+            {
+                checkForDealerBlackjack();
+            }
+
+            /* switch (graphics.size())
+            {
+                case indexOfFirstVisualCardInGraphics:
+                    System.out.println(indexOfFirstVisualCardInGraphics);
+                    
                     drawCard(player.getHand(player.getCurrentHandIndex()), playerCardStartingPos, false, false);
                     break;
                 case 1:
@@ -204,7 +239,7 @@ public class GamePanel extends JPanel implements Runnable
                     break;
                 default:
                     break;
-            }
+            } */
         }
     }
 
@@ -228,8 +263,8 @@ public class GamePanel extends JPanel implements Runnable
 
     private Point getCurrentHandVisualCardPosition()
     {
-        return new Point(visualCards.get(player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(0)).getX(),
-                         visualCards.get(player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(0)).getY());
+        return new Point(graphics.get(player.getHand(player.getCurrentHandIndex()).getGraphicsIndex(0)).getX(),
+                         graphics.get(player.getHand(player.getCurrentHandIndex()).getGraphicsIndex(0)).getY());
     }
 
     private void drawCard(Hand destinationHand, Point destinationPos, boolean faceDown, boolean isRotated)
@@ -244,10 +279,10 @@ public class GamePanel extends JPanel implements Runnable
             cardImage = cardFaceDown;
         }
 
-        visualCards.add(new VisualCard(cardImage, cardHolderPos.x, cardHolderPos.y, isRotated));
-        destinationHand.addVisualCardIndex(visualCards.size() - 1);
+        graphics.add(new VisualCard(cardImage, cardHolderPos.x, cardHolderPos.y, cardSize.width, cardSize.height, isRotated));
+        destinationHand.addGraphicsIndex(graphics.size() - 1);
 
-        animator.start(cardHolderPos, destinationPos, visualCards.size() - 1);
+        animator.start(cardHolderPos, destinationPos, graphics.size() - 1);
         audioManager.play(Audio.CARD_DRAW);
     }
 
@@ -292,18 +327,31 @@ public class GamePanel extends JPanel implements Runnable
         }
     }
 
+    boolean canTakeCard = true;
+
     private void hit()
     {
-        if (player.getNumberOfActiveHands() > 1)
+        if (canTakeCard)
         {
-            drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, false);
+            if (player.getNumberOfActiveHands() > 1)
+            {
+                drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, false);
+            }
+            else
+            {
+                drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
+            }
+
+            canTakeCard = false;
         }
         else
         {
-            drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
+            if (!animator.isPlaying)
+            {
+                checkForPlayerBust(player.getCurrentHandIndex());
+                canTakeCard = true;
+            }
         }
-
-        checkForPlayerBust(player.getCurrentHandIndex()); // Maybe does not need arg
     }
 
     private void stand()
@@ -320,25 +368,36 @@ public class GamePanel extends JPanel implements Runnable
 
     private void doubleDown()
     {
-        if (canDoubleDown())
+        if (canTakeCard)
         {
-            doubleBet();
-            player.setDoubledDownToTrueInHand(player.getCurrentHandIndex());
-            
-            if (player.getNumberOfActiveHands() > 1)
+            if (canDoubleDown())
             {
-                drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, true);
+                doubleBet();
+                player.setDoubledDownToTrueInHand(player.getCurrentHandIndex());
+                
+                if (player.getNumberOfActiveHands() > 1)
+                {
+                    drawCard(player.getHand(player.getCurrentHandIndex()), getNextSplitPlayerCardPosition(player.getCurrentHandIndex()), false, true);
+                }
+                else
+                {
+                    drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, true);
+                }
+
+                canTakeCard = false;
             }
             else
             {
-                drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, true);
+                gameState = GameState.PLAYER_CHOOSE;
             }
-
-            checkForPlayerBust(player.getCurrentHandIndex());
         }
         else
         {
-            gameState = GameState.PLAYER_CHOOSE;
+            if (!animator.isPlaying)
+            {
+                checkForPlayerBust(player.getCurrentHandIndex());
+                canTakeCard = true;
+            }
         }
     }
 
@@ -363,7 +422,7 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case MOVE_UPPER_VISUAL_CARD:
-                    int upperVisualCardIndex = player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(1);
+                    int upperVisualCardIndex = player.getHand(player.getCurrentHandIndex()).getGraphicsIndex(1);
                     moveSplitCard(player.getCurrentHandIndex() + splitDirection, upperVisualCardIndex);
 
                     if (player.getNumberOfActiveHands() > 2)
@@ -373,14 +432,14 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case MOVE_LOWER_VISUAL_CARD:
-                    int lowerVisualCardIndex = player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(0);
+                    int lowerVisualCardIndex = player.getHand(player.getCurrentHandIndex()).getGraphicsIndex(0);
                     moveSplitCard(player.getCurrentHandIndex(), lowerVisualCardIndex);
 
                     break;
                 case SETUP_NEW_HANDS:
                     player.getHand(player.getCurrentHandIndex() + splitDirection).setActive(true);
                     player.getHand(player.getCurrentHandIndex()).moveLastCardToHand(player.getHand((player.getCurrentHandIndex() + splitDirection)));
-                    player.getHand(player.getCurrentHandIndex()).moveLastVisualCardIndexToHand(player.getHand(player.getCurrentHandIndex() + splitDirection));
+                    player.getHand(player.getCurrentHandIndex()).moveLastGraphicsIndexToHand(player.getHand(player.getCurrentHandIndex() + splitDirection));
 
                     break;
                 case DRAW_FIRST_CARD:
@@ -399,8 +458,21 @@ public class GamePanel extends JPanel implements Runnable
 
                     break;
                 case DISPLAY_ARROW:
-                    arrow.calculatePos(cardSize, getCurrentHandVisualCardPosition());
-                    arrow.setActive(true);
+                    Point position = ((Arrow)arrow).getPosition(getCurrentHandVisualCardPosition().x, getCurrentHandVisualCardPosition().y,
+                                                                      cardSize.width,
+                                                                      cardSize.height);
+
+                    if (!((Arrow)arrow).isActive())
+                    {
+                        arrow.setX(position.x);
+                        arrow.setY(position.y);
+                
+                        ((Arrow)arrow).setActive(true);
+                    }
+                    else if (splitDirection == 1)
+                    {
+                        animator.start(new Point(arrow.getX(), arrow.getY()), position, ((Arrow)arrow).getGraphicsIndex());
+                    }
 
                     break;
                 case CHANGE_GAME_STATE:
@@ -480,14 +552,14 @@ public class GamePanel extends JPanel implements Runnable
         return index >= 0;
     }
 
-    private void moveSplitCard(int handIndex, int visualCardIndex)
+    private void moveSplitCard(int handIndex, int graphicsIndex)
     {
-        VisualCard visualCard = visualCards.get(visualCardIndex);
+        Graphic visualCard = graphics.get(graphicsIndex);
 
         Point startingPos = new Point(visualCard.getX(), visualCard.getY());
         Point destinationPos = new Point(splitMarginX + (splitOffsetX * handIndex), playerCardStartingPos.y);
 
-        animator.start(startingPos, destinationPos, visualCardIndex);
+        animator.start(startingPos, destinationPos, graphicsIndex);
         audioManager.play(Audio.CARD_SLIDE);
     }
 
@@ -497,12 +569,12 @@ public class GamePanel extends JPanel implements Runnable
             
         for (int i = 0; i < player.getHand(handToShiftIndex).getNumberOfCards(); i++) // Move all cards in the hand to be shifted
         {
-            int visualCardIndex = player.getHand(handToShiftIndex).getVisualCardIndex(i);
+            int graphicsIndex = player.getHand(handToShiftIndex).getGraphicsIndex(i);
 
-            Point startingPos = new Point(visualCards.get(visualCardIndex).getX(), visualCards.get(visualCardIndex).getY());
+            Point startingPos = new Point(graphics.get(graphicsIndex).getX(), graphics.get(graphicsIndex).getY());
             Point destinationPos = new Point(startingPos.x + (splitOffsetX * splitDirection), startingPos.y);
 
-            animator.start(startingPos, destinationPos, visualCardIndex);
+            animator.start(startingPos, destinationPos, graphicsIndex);
         }
 
         player.swapHands(handToShiftIndex, handToShiftIndex + splitDirection);
@@ -550,7 +622,9 @@ public class GamePanel extends JPanel implements Runnable
     private void goToNextHand()
     {
         player.decrementCurrentHandIndex();
-        arrow.calculatePos(cardSize, getCurrentHandVisualCardPosition());
+        
+        Point destinationPos = ((Arrow)arrow).getPosition(getCurrentHandVisualCardPosition().x, getCurrentHandVisualCardPosition().y, cardSize.width, cardSize.height);
+        animator.start(new Point(arrow.getX(), arrow.getY()), destinationPos, ((Arrow)arrow).getGraphicsIndex());
 
         gameState = GameState.PLAYER_CHOOSE;
     }
@@ -609,7 +683,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private void revealFaceDownCard()
     {
-        VisualCard visualCardWithFaceDownImage = visualCards.get(1);
+        Graphic visualCardWithFaceDownImage = graphics.get(indexOfFirstVisualCardInGraphics + 1);
         visualCardWithFaceDownImage.setImage(dealerHand.getCard(0).getImage());
     }
 
@@ -708,7 +782,7 @@ public class GamePanel extends JPanel implements Runnable
 
         dealerHand.moveAllCardsToDeck(usedDeck);
 
-        visualCards.clear();
+        graphics.subList(indexOfFirstVisualCardInGraphics, graphics.size()).clear();
     }
 
     private void checkForShuffle()
@@ -757,7 +831,8 @@ public class GamePanel extends JPanel implements Runnable
         player.reset();
 
         dealerHand.reset();
-        arrow.reset();
+        
+        ((Arrow)arrow).reset();
         
         canClearBoard = false;
     }
@@ -867,9 +942,9 @@ public class GamePanel extends JPanel implements Runnable
         g2d.drawImage(dealerTray, dealerTrayPos.x, dealerTrayPos.y, dealerTraySize.width, dealerTraySize.height, null);
         g2d.drawImage(infoTextArea, infoTextAreaPos.x, infoTextAreaPos.y, infoTextAreaSize.width, infoTextAreaSize.height, null);
 
-        if (arrow.isActive())
+        if (((Arrow)arrow).isActive())
         {
-            g2d.drawImage(arrow.getImage(), arrow.getPos().x, arrow.getPos().y, arrow.getSize().width, arrow.getSize().height, null);
+            g2d.drawImage(arrow.getImage(), arrow.getX(), arrow.getY(), arrow.getWidth(), arrow.getHeight(), null);
         }
 
         // Text
@@ -936,9 +1011,9 @@ public class GamePanel extends JPanel implements Runnable
             }
         } */
 
-        for (VisualCard visualCard : visualCards)
+        for (Graphic visualCard : graphics.subList(indexOfFirstVisualCardInGraphics, graphics.size()))
         {   
-            if (visualCard.isRotated())
+            if (((VisualCard)visualCard).isRotated())
             {
                 AffineTransform rotatedCard = AffineTransform.getTranslateInstance(visualCard.getX() + cardSize.height, visualCard.getY());
                 AffineTransform rotatedShadow = AffineTransform.getTranslateInstance(visualCard.getX() + cardSize.height + scale, visualCard.getY() - scale);
@@ -1160,15 +1235,16 @@ public class GamePanel extends JPanel implements Runnable
         private List<Point> startingPositions = new ArrayList<Point>();
         private List<Point> destinationPositions = new ArrayList<Point>();
         private List<Point> currentPositions = new ArrayList<Point>();
-        private double newPosX;
-        private double newPosY;
-
+        
         private List<Integer> indexesInArrayList = new ArrayList<Integer>();
 
         private final double durationInSeconds = 0.435;
 
-        private int count;
+        private double newPosX;
+        private double newPosY;
+
         private double progress;
+        private int count;
 
         public boolean isPlaying()
         {
@@ -1194,13 +1270,13 @@ public class GamePanel extends JPanel implements Runnable
                     
                         currentPositions.get(i).setLocation((int)Math.round(newPosX), (int)Math.round(newPosY));
 
-                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x); // function returning: visualCards.get(indexesInArrayList.get(i)) ?
-                        visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
+                        graphics.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x); // function returning: visualCards.get(indexesInArrayList.get(i)) ?
+                        graphics.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
                     }
                     else
                     {
-                        visualCards.get(indexesInArrayList.get(i)).setX(destinationPositions.get(i).x);
-                        visualCards.get(indexesInArrayList.get(i)).setY(destinationPositions.get(i).y);
+                        graphics.get(indexesInArrayList.get(i)).setX(destinationPositions.get(i).x);
+                        graphics.get(indexesInArrayList.get(i)).setY(destinationPositions.get(i).y);
 
                         if (i == startingPositions.size() - 1)
                         {

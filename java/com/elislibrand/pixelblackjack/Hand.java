@@ -6,7 +6,7 @@ import java.util.List;
 public class Hand
 {
     private List<Card> cards;
-    private List<Integer> visualCardIndexes;
+    private List<Integer> graphicsIndexes;
 
     private boolean isBlackjack = false;
     private boolean isBusted = false;
@@ -16,7 +16,7 @@ public class Hand
     public Hand()
     {
         cards = new ArrayList<Card>();
-        visualCardIndexes = new ArrayList<Integer>();
+        graphicsIndexes = new ArrayList<Integer>();
     }
 
     public boolean isActive()
@@ -50,19 +50,19 @@ public class Hand
         deck.removeCard(0);
     }
 
-    public void addVisualCardIndex(int index)
+    public void addGraphicsIndex(int index)
     {
-        visualCardIndexes.add(index);
+        graphicsIndexes.add(index);
     }
 
-    public int getVisualCardIndex(int index)
+    public int getGraphicsIndex(int index)
     {
-        return visualCardIndexes.get(index);
+        return graphicsIndexes.get(index);
     }
 
-    private void removeVisualCardIndex(int index)
+    private void removeGraphicsIndex(int index)
     {
-        visualCardIndexes.remove(index);
+        graphicsIndexes.remove(index);
     }
 
     public void moveLastCardToHand(Hand hand) // REMAKE
@@ -71,12 +71,12 @@ public class Hand
         removeCard(1);
     }
 
-    public void moveLastVisualCardIndexToHand(Hand hand)
+    public void moveLastGraphicsIndexToHand(Hand hand)
     {
-        int lastVisualCardIndex = visualCardIndexes.get(visualCardIndexes.size() - 1);
+        int lastGraphicsIndex = graphicsIndexes.get(graphicsIndexes.size() - 1);
 
-        hand.addVisualCardIndex(lastVisualCardIndex);
-        removeVisualCardIndex(visualCardIndexes.size() - 1);
+        hand.addGraphicsIndex(lastGraphicsIndex);
+        removeGraphicsIndex(graphicsIndexes.size() - 1);
     }
 
     public int getNumberOfCards()
@@ -211,6 +211,6 @@ public class Hand
         isActive = false;
 
         cards.clear();
-        visualCardIndexes.clear();
+        graphicsIndexes.clear();
     }
 }

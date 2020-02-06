@@ -1,48 +1,26 @@
 package com.elislibrand.pixelblackjack;
 
-import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Point;
 
-import javax.swing.ImageIcon;
-
-public class Arrow
+public class Arrow extends Graphic
 {
-    private Image image;
-
-    private Dimension size;
-    private Point pos;
-
-    private int marginFromTopObject;
+    private int graphicsIndex;
+    private int marginTop;
     private boolean isActive;
 
-    public Arrow()
+    public Arrow(Image image, int x, int y, int width, int height, int graphicsIndex)
     {
-        image = new ImageIcon(getClass().getResource("/assets/props/arrow.png")).getImage();
-        size = new Dimension(5 * Screen.SCALE, 5 * Screen.SCALE);
+        super(image, x, y, width, height);
         
-        marginFromTopObject = 3 * Screen.SCALE;
+        this.graphicsIndex = graphicsIndex;
+        marginTop = 3 * Screen.SCALE;
         isActive = false;
     }
 
-    public Image getImage()
+    public int getGraphicsIndex()
     {
-        return image;
-    }
-
-    public Dimension getSize()
-    {
-        return size;
-    }
-
-    public Point getPos()
-    {
-        return pos;
-    }
-
-    public void setPos(Point pos)
-    {
-        this.pos = pos;
+        return graphicsIndex;
     }
 
     public boolean isActive()
@@ -55,9 +33,9 @@ public class Arrow
         this.isActive = isActive;
     }
 
-    public void calculatePos(Dimension cardSize, Point currentHandVisualCardPosition) // Rename later
+    public Point getPosition(int x, int y, int width, int height)
     {
-        setPos(new Point(currentHandVisualCardPosition.x + (((int)((cardSize.width / Screen.SCALE) / 2) - (int)((size.width / Screen.SCALE) / 2)) * Screen.SCALE), currentHandVisualCardPosition.y + cardSize.height + marginFromTopObject));
+        return new Point(x + (((int)((width / Screen.SCALE) / 2) - (int)((this.width / Screen.SCALE) / 2)) * Screen.SCALE), y + height + marginTop);
     }
 
     public void reset()

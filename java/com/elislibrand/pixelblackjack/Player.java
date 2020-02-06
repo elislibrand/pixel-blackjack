@@ -206,7 +206,7 @@ public class Player
     {
         Hand hand = hands.get(index);
 
-        if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() == 2)
+        if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() == 2 && numberOfActiveHands == 1)
         {
             hand.setBlackjack(true);
         }
