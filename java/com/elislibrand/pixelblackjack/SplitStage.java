@@ -15,6 +15,8 @@ public enum SplitStage
     SETUP_NEW_HANDS, // Needs better name
     DRAW_FIRST_CARD,
     DRAW_SECOND_CARD,
+    INCREMENT_CURRENT_HAND_INDEX,
+    DISPLAY_ARROW,
     CHANGE_GAME_STATE {
         @Override
         public SplitStage next()

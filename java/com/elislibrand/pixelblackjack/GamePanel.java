@@ -12,6 +12,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.ImageIcon;
@@ -85,7 +86,6 @@ public class GamePanel extends JPanel implements Runnable
     private Image cardShadow;
     private Image chipShadow;
     private Image betSquare;
-    private Image arrow;
     private Image dealerTray;
     private Image infoTextArea;
     private Image chipInBetSquare;
@@ -96,6 +96,8 @@ public class GamePanel extends JPanel implements Runnable
 
     private final Deck playingDeck = new Deck();
     private final Deck usedDeck = new Deck();
+    
+    private final Arrow arrow = new Arrow();
 
     public GamePanel()
     {
@@ -127,7 +129,6 @@ public class GamePanel extends JPanel implements Runnable
         betSquare = new ImageIcon(getClass().getResource("/assets/props/bet_square.png")).getImage();
         dealerTray = new ImageIcon(getClass().getResource("/assets/props/dealer_tray.png")).getImage();
         infoTextArea = new ImageIcon(getClass().getResource("/assets/props/info_text_area.png")).getImage();
-        arrow = new ImageIcon(getClass().getResource("/assets/props/arrow.png")).getImage();
     }
 
     private final void initializeGame()
@@ -223,6 +224,12 @@ public class GamePanel extends JPanel implements Runnable
     {
         return new Point(dealerCardStartingPos.x + (dealerCardOffset.x * dealerHand.getNumberOfCards()),
                          dealerCardStartingPos.y + (dealerCardOffset.y * dealerHand.getNumberOfCards()));
+    }
+
+    private Point getCurrentHandVisualCardPosition()
+    {
+        return new Point(visualCards.get(player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(0)).getX(),
+                         visualCards.get(player.getHand(player.getCurrentHandIndex()).getVisualCardIndex(0)).getY());
     }
 
     private void drawCard(Hand destinationHand, Point destinationPos, boolean faceDown, boolean isRotated)
@@ -384,12 +391,19 @@ public class GamePanel extends JPanel implements Runnable
                     drawCardAfterSplit();
                     
                     break;
-                case CHANGE_GAME_STATE:
+                case INCREMENT_CURRENT_HAND_INDEX:
                     if (splitDirection == 1)
                     {
                         player.incrementCurrentHandIndex();
                     }
 
+                    break;
+                case DISPLAY_ARROW:
+                    arrow.calculatePos(cardSize, getCurrentHandVisualCardPosition());
+                    arrow.setActive(true);
+
+                    break;
+                case CHANGE_GAME_STATE:
                     gameState = GameState.PLAYER_CHOOSE;
                     
                     break;
@@ -536,6 +550,8 @@ public class GamePanel extends JPanel implements Runnable
     private void goToNextHand()
     {
         player.decrementCurrentHandIndex();
+        arrow.calculatePos(cardSize, getCurrentHandVisualCardPosition());
+
         gameState = GameState.PLAYER_CHOOSE;
     }
 
@@ -741,6 +757,7 @@ public class GamePanel extends JPanel implements Runnable
         player.reset();
 
         dealerHand.reset();
+        arrow.reset();
         
         canClearBoard = false;
     }
@@ -829,16 +846,6 @@ public class GamePanel extends JPanel implements Runnable
             g2d.drawString("Pixel Blackjack v2.4.1", (20 * scale), (15 * scale));
             g2d.drawString("Player winnings: " + player.getWinnings(), (20 * scale), (30 * scale));
             g2d.drawString("Current hand: " + player.getCurrentHandIndex(), (20 * scale), (38 * scale));
-        
-            int count = 0;
-
-            for (VisualCard visualCard : visualCards)
-            {
-                g2d.drawImage(arrow, visualCard.getX() + (cardSize.width / 2) - (arrowSize.width / 2), visualCard.getY() + cardSize.height + (3 * scale), arrowSize.width, arrowSize.height, null);
-                g2d.drawString(count + ".", visualCard.getX(), visualCard.getY() - (2 * scale));
-
-                count++;
-            }
 
             g2d.setFont(Screen.getScaledFont(3));
             g2d.setColor(new Color(0, 0, 0, 50));
@@ -859,6 +866,11 @@ public class GamePanel extends JPanel implements Runnable
         g2d.drawImage(betSquare, betSquarePos.x, betSquarePos.y, betSquareSize.width, betSquareSize.height, null);
         g2d.drawImage(dealerTray, dealerTrayPos.x, dealerTrayPos.y, dealerTraySize.width, dealerTraySize.height, null);
         g2d.drawImage(infoTextArea, infoTextAreaPos.x, infoTextAreaPos.y, infoTextAreaSize.width, infoTextAreaSize.height, null);
+
+        if (arrow.isActive())
+        {
+            g2d.drawImage(arrow.getImage(), arrow.getPos().x, arrow.getPos().y, arrow.getSize().width, arrow.getSize().height, null);
+        }
 
         // Text
         g2d.setColor(Color.WHITE);
@@ -1182,7 +1194,7 @@ public class GamePanel extends JPanel implements Runnable
                     
                         currentPositions.get(i).setLocation((int)Math.round(newPosX), (int)Math.round(newPosY));
 
-                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x);
+                        visualCards.get(indexesInArrayList.get(i)).setX(currentPositions.get(i).x); // function returning: visualCards.get(indexesInArrayList.get(i)) ?
                         visualCards.get(indexesInArrayList.get(i)).setY(currentPositions.get(i).y);
                     }
                     else
