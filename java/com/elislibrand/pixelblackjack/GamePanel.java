@@ -918,7 +918,7 @@ public class GamePanel extends JPanel implements Runnable
             g2d.setFont(Screen.FONT);
             g2d.setColor(Color.WHITE);
 
-            g2d.drawString("Pixel Blackjack v2.4.1", (20 * scale), (15 * scale));
+            g2d.drawString("Pixel Blackjack v2.5.0", (20 * scale), (15 * scale));
             g2d.drawString("Player winnings: " + player.getWinnings(), (20 * scale), (30 * scale));
             g2d.drawString("Current hand: " + player.getCurrentHandIndex(), (20 * scale), (38 * scale));
 
