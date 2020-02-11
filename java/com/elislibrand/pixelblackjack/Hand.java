@@ -124,6 +124,59 @@ public class Hand
         return totalValue;
     }
 
+    public String getValueOfCardsToString()
+    {
+        int totalValue = 0;
+        int aces = 0;
+        boolean isSoft = false;
+
+        for (Card card : cards)
+        {
+            switch (card.getValue())
+            {
+                case ACE: aces += 1; break;
+                case TWO: totalValue += 2; break;
+                case THREE: totalValue += 3; break;
+                case FOUR: totalValue += 4; break;
+                case FIVE: totalValue += 5; break;
+                case SIX: totalValue += 6; break;
+                case SEVEN: totalValue += 7; break;
+                case EIGHT: totalValue += 8; break;
+                case NINE: totalValue += 9; break;
+                case TEN: totalValue += 10; break;
+                case JACK: totalValue += 10; break;
+                case QUEEN: totalValue += 10; break;
+                case KING: totalValue += 10; break;
+            }
+        }
+
+        for (int i = 0; i < aces; i++)
+        {
+            if (totalValue + (aces - 1) > 10)
+            {
+                totalValue += 1;
+            }
+            else
+            {
+                totalValue += 11;
+
+                isSoft = true;
+            }
+        }
+
+        if (isBlackjack)
+        {
+            return "Blackjack!";
+        }
+
+        if (!isSoft || isDoubledDown)
+        {
+            return Integer.toString(totalValue);
+        }
+
+        return Integer.toString(totalValue - 10) + "/" + Integer.toString(totalValue);
+    }
+
     public void moveAllCardsToDeck(Deck deck)
     {
         for (int i = 0; i < cards.size(); i++)

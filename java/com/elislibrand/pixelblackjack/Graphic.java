@@ -11,6 +11,8 @@ public class Graphic
     protected int width;
     protected int height;
 
+    protected boolean isAnimating;
+
     public Graphic(Image image, int x, int y, int width, int height)
     {
         this.image = image;
@@ -19,6 +21,8 @@ public class Graphic
         this.y = y;
         this.width = width;
         this.height = height;
+
+        isAnimating = false;
     }
 
     public final Image getImage()
@@ -69,5 +73,15 @@ public class Graphic
     public final void setHeight(int height)
     {
         this.height = height;
+    }
+
+    public final boolean isAnimating()
+    {
+        return isAnimating;
+    }
+
+    public final void setAnimating(boolean isAnimating)
+    {
+        this.isAnimating = isAnimating;
     }
 }

@@ -6,7 +6,7 @@ public class TextManager
 {
     public int getCenteredText(String text, FontMetrics fontMetrics, int x)
     {
-        return x - (fontMetrics.stringWidth(text) / 2);
+        return x - (fontMetrics.stringWidth(text) / 2) + (1 * Screen.SCALE);
     }
 
     public String getFormattedNumber(int number)

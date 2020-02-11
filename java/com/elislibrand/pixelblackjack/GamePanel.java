@@ -40,7 +40,7 @@ public class GamePanel extends JPanel implements Runnable
     private final int scale = Screen.SCALE;
 
     private final Dimension screenSize = new Dimension(Screen.WIDTH, Screen.HEIGHT);
-    private final Dimension cardSize = new Dimension(33 * scale, 49 * scale);
+    private final Dimension cardSize = new Dimension(33 * scale, 49 * scale); // Remove
     private final Dimension cardShadowSize = new Dimension(35 * scale, 51 * scale);
     private final Dimension chipSize = new Dimension(21 * scale, 21 * scale);
     private final Dimension chipInChipTraySize = new Dimension(21 * scale, 2 * scale);
@@ -217,29 +217,6 @@ public class GamePanel extends JPanel implements Runnable
             {
                 checkForDealerBlackjack();
             }
-
-            /* switch (graphics.size())
-            {
-                case indexOfFirstVisualCardInGraphics:
-                    System.out.println(indexOfFirstVisualCardInGraphics);
-                    
-                    drawCard(player.getHand(player.getCurrentHandIndex()), playerCardStartingPos, false, false);
-                    break;
-                case 1:
-                    drawCard(dealerHand, dealerCardStartingPos, true, false);
-                    break;
-                case 2:
-                    drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
-                    break;
-                case 3:
-                    drawCard(dealerHand, new Point(dealerCardStartingPos.x + dealerCardOffset.x, dealerCardStartingPos.y + dealerCardOffset.y), false, false);
-                    break;
-                case 4:
-                    checkForDealerBlackjack();
-                    break;
-                default:
-                    break;
-            } */
         }
     }
 
@@ -918,7 +895,7 @@ public class GamePanel extends JPanel implements Runnable
             g2d.setFont(Screen.FONT);
             g2d.setColor(Color.WHITE);
 
-            g2d.drawString("Pixel Blackjack v2.5.0", (20 * scale), (15 * scale));
+            g2d.drawString("Pixel Blackjack v2.6.0", (20 * scale), (15 * scale));
             g2d.drawString("Player winnings: " + player.getWinnings(), (20 * scale), (30 * scale));
             g2d.drawString("Current hand: " + player.getCurrentHandIndex(), (20 * scale), (38 * scale));
 
@@ -936,11 +913,35 @@ public class GamePanel extends JPanel implements Runnable
         }
 
         g2d.setFont(Screen.FONT);
+        g2d.setColor(Color.WHITE);
 
         // Props
         g2d.drawImage(betSquare, betSquarePos.x, betSquarePos.y, betSquareSize.width, betSquareSize.height, null);
         g2d.drawImage(dealerTray, dealerTrayPos.x, dealerTrayPos.y, dealerTraySize.width, dealerTraySize.height, null);
         g2d.drawImage(infoTextArea, infoTextAreaPos.x, infoTextAreaPos.y, infoTextAreaSize.width, infoTextAreaSize.height, null);
+
+        for (Hand hand : player.getHands())
+        {
+            if (hand.isActive() && hand.getNumberOfCards() > 0)
+            {
+                Graphic card = graphics.get(hand.getGraphicsIndex(0));
+
+                if (!card.isAnimating())
+                {
+                    String valueText = hand.getValueOfCardsToString();
+                
+                    int cardX = card.getX();
+                    int cardY = card.getY();
+                    int cardWidth = card.getWidth();
+                    int cardHeight = card.getHeight();
+
+                    int textX = textManager.getCenteredText(valueText, g2d.getFontMetrics(), cardX + ((int)((cardWidth / scale) / 2) * scale));
+                    int textY = cardY + cardHeight + Screen.FONT.getSize() + (2 * scale);
+
+                    g2d.drawString(valueText, textX, textY);
+                }
+            }
+        }
 
         if (((Arrow)arrow).isActive())
         {
@@ -981,7 +982,7 @@ public class GamePanel extends JPanel implements Runnable
             g2d.drawString(chipText,
                            textManager.getCenteredText(chipText,
                                                        g2d.getFontMetrics(),
-                                                       betRowMarginX + (i * betRowOffsetX) + ((int)((chipSize.width / scale) / 2) * scale) + (2 * scale)),
+                                                       betRowMarginX + (i * betRowOffsetX) + ((int)((chipSize.width / scale) / 2) * scale) + (1 * scale)),
                            screenSize.height + (60 * scale));
         
             i++;
@@ -1281,6 +1282,7 @@ public class GamePanel extends JPanel implements Runnable
                         if (i == startingPositions.size() - 1)
                         {
                             isPlaying = false;
+                            graphics.get(indexesInArrayList.get(i)).setAnimating(false);
                             
                             clearArrayLists();
                         }
@@ -1309,6 +1311,7 @@ public class GamePanel extends JPanel implements Runnable
             indexesInArrayList.add(indexInArrayList);
 
             isPlaying = true;
+            graphics.get(indexInArrayList).setAnimating(true);
         }
 
         private float easeInOut(float timeElapsedInSeconds, float startingPos, float distance, float durationInSeconds)
