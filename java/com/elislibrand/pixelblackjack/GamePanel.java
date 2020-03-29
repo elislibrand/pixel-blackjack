@@ -35,7 +35,9 @@ public class GamePanel extends JPanel implements Runnable
     private List<VisualChip> visualChips;
 
     private final Player player = new Player();
-    private final Hand dealerHand = new Hand();
+    private final Dealer dealer = new Dealer();
+
+    //private final Hand dealerHand = new Hand();
 
     private final int scale = Screen.SCALE;
 
@@ -65,6 +67,8 @@ public class GamePanel extends JPanel implements Runnable
     private final Point chipSplitOffset = new Point((2 * cardSize.width) - (3 * scale), 0);
     private final Point chipDoubleDownOffset = new Point(chipSize.width + (3 * scale), 0);
 
+    private final float blackjackPayRatio = 1 + Math.round((3 / 2) * 10) / 10;
+
     private final int minBet = 1;
     private final int maxBet = 100000;
     private final int numberOfDecks = 6;
@@ -84,6 +88,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private boolean canClearBoard = false;
     private boolean debugMode = false;
+    private boolean playerCanTakeCard = true;
 
     private Image cardFaceDown;
     private Image cardShadow;
@@ -161,7 +166,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private final void activateHands()
     {
-        dealerHand.setActive(true);
+        dealer.getHand().setActive(true);
         player.getHand(player.getCurrentHandIndex()).setActive(true);
     }
 
@@ -203,19 +208,38 @@ public class GamePanel extends JPanel implements Runnable
             }
             else if (graphics.size() == indexOfFirstVisualCardInGraphics + 1)
             {
-                drawCard(dealerHand, dealerCardStartingPos, true, false);
+                player.getHand(player.getCurrentHandIndex()).calculateValueOfCards();
+
+                drawCard(dealer.getHand(), dealerCardStartingPos, true, false);
             }
             else if (graphics.size() == indexOfFirstVisualCardInGraphics + 2)
             {
+                dealer.getHand().calculateValueOfCards();
+
                 drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
             }
             else if (graphics.size() == indexOfFirstVisualCardInGraphics + 3)
             {
-                drawCard(dealerHand, new Point(dealerCardStartingPos.x + dealerCardOffset.x, dealerCardStartingPos.y + dealerCardOffset.y), false, false);
+                player.getHand(player.getCurrentHandIndex()).calculateValueOfCards();
+
+                drawCard(dealer.getHand(), new Point(dealerCardStartingPos.x + dealerCardOffset.x, dealerCardStartingPos.y + dealerCardOffset.y), false, false);
             }
             else
             {
-                checkForDealerBlackjack();
+                dealer.getHand().calculateValueOfCards();
+
+                player.checkForBlackjack();
+                dealer.checkForBlackjack();
+
+                // Set game states
+                if (player.isBlackjack() || dealer.isBlackjack())
+                {
+                    gameState = GameState.DEALER_DRAW;
+                }
+                else
+                {
+                    gameState = GameState.PLAYER_CHOOSE;
+                }
             }
         }
     }
@@ -234,8 +258,8 @@ public class GamePanel extends JPanel implements Runnable
 
     private Point getNextDealerCardPosition()
     {
-        return new Point(dealerCardStartingPos.x + (dealerCardOffset.x * dealerHand.getNumberOfCards()),
-                         dealerCardStartingPos.y + (dealerCardOffset.y * dealerHand.getNumberOfCards()));
+        return new Point(dealerCardStartingPos.x + (dealerCardOffset.x * dealer.getHand().getNumberOfCards()),
+                         dealerCardStartingPos.y + (dealerCardOffset.y * dealer.getHand().getNumberOfCards()));
     }
 
     private Point getCurrentHandVisualCardPosition()
@@ -263,52 +287,10 @@ public class GamePanel extends JPanel implements Runnable
         audioManager.play(Audio.CARD_DRAW);
     }
 
-    private void checkForDealerBlackjack()
-    {
-        if (hasBlackjackDealer())
-        {
-            gameState = GameState.DEALER_DRAW;
-        }
-        else
-        {
-            gameState = GameState.PLAYER_CHOOSE;
-        }
-    }
-
-    private boolean hasBlackjackDealer()
-    {        
-        if (dealerHand.getValueOfCards() == 21)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    private void checkForPlayerBlackjack(int index)
-    {
-        player.checkForBlackjackInHand(index);
-
-        if (player.isBlackjackInHand(index) || player.shouldAutoStandInHand(index))
-        {
-            if (player.isAnotherHand())
-            {    
-                goToNextHand();
-            }
-            else
-            {
-                gameState = GameState.DEALER_DRAW;
-            }
-        }
-    }
-
-    boolean canTakeCard = true;
-
     private void hit()
     {
-        if (canTakeCard)
+        //Maybe remove playerCanTakeCard and do big boy if (!animator.isPlaying)
+        if (playerCanTakeCard)
         {
             if (player.getNumberOfActiveHands() > 1)
             {
@@ -319,20 +301,24 @@ public class GamePanel extends JPanel implements Runnable
                 drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, false);
             }
 
-            canTakeCard = false;
+            playerCanTakeCard = false;
         }
         else
         {
             if (!animator.isPlaying)
             {
-                checkForPlayerBust(player.getCurrentHandIndex());
-                canTakeCard = true;
+                player.getHand(player.getCurrentHandIndex()).calculateValueOfCards();
+
+                checkForPlayerAutoStand(player.getCurrentHandIndex());
+                playerCanTakeCard = true;
             }
         }
     }
 
     private void stand()
     {
+        player.getHand(player.getCurrentHandIndex()).setSoft(false);
+
         if (player.isAnotherHand())
         {    
             goToNextHand();
@@ -345,7 +331,7 @@ public class GamePanel extends JPanel implements Runnable
 
     private void doubleDown()
     {
-        if (canTakeCard)
+        if (playerCanTakeCard)
         {
             if (canDoubleDown())
             {
@@ -361,7 +347,7 @@ public class GamePanel extends JPanel implements Runnable
                     drawCard(player.getHand(player.getCurrentHandIndex()), getNextPlayerCardPosition(playerCardStartingPos, player.getCurrentHandIndex()), false, true);
                 }
 
-                canTakeCard = false;
+                playerCanTakeCard = false;
             }
             else
             {
@@ -372,8 +358,10 @@ public class GamePanel extends JPanel implements Runnable
         {
             if (!animator.isPlaying)
             {
-                checkForPlayerBust(player.getCurrentHandIndex());
-                canTakeCard = true;
+                player.getHand(player.getCurrentHandIndex()).calculateValueOfCards();
+
+                checkForPlayerAutoStand(player.getCurrentHandIndex());
+                playerCanTakeCard = true;
             }
         }
     }
@@ -396,6 +384,11 @@ public class GamePanel extends JPanel implements Runnable
                         movesNeeded--;
                         splitStage = splitStage.previous();
                     }
+                    else
+                    {
+                        System.out.println(splitIndexToMoveTo);
+                        player.getHand(splitIndexToMoveTo).setActive(true);
+                    }
 
                     break;
                 case MOVE_UPPER_VISUAL_CARD:
@@ -415,19 +408,27 @@ public class GamePanel extends JPanel implements Runnable
                     break;
                 case SETUP_NEW_HANDS:
                     player.getHand(player.getCurrentHandIndex() + splitDirection).setActive(true);
+                    player.getHand(player.getCurrentHandIndex()).setActive(true);
+
                     player.getHand(player.getCurrentHandIndex()).moveLastCardToHand(player.getHand((player.getCurrentHandIndex() + splitDirection)));
                     player.getHand(player.getCurrentHandIndex()).moveLastGraphicsIndexToHand(player.getHand(player.getCurrentHandIndex() + splitDirection));
 
+                    player.getHand(player.getCurrentHandIndex() + splitDirection).calculateValueOfCards();
+                    player.getHand(player.getCurrentHandIndex()).calculateValueOfCards();
                     break;
                 case DRAW_FIRST_CARD:
                     drawCardAfterSplit();
 
                     break;
                 case DRAW_SECOND_CARD:
+                    player.getHand(player.getCurrentHandIndex() + splitDirection).calculateValueOfCards();
+
                     drawCardAfterSplit();
                     
                     break;
                 case INCREMENT_CURRENT_HAND_INDEX:
+                    player.getHand(player.getCurrentHandIndex()).calculateValueOfCards();
+
                     if (splitDirection == 1)
                     {
                         player.incrementCurrentHandIndex();
@@ -467,6 +468,8 @@ public class GamePanel extends JPanel implements Runnable
         doubleBet();
 
         player.incrementNumberOfActiveHands();
+
+        player.getHand(player.getCurrentHandIndex()).setActive(false);
 
         splitDirection = getSplitDirection();
         splitIndexToMoveTo = getSplitIndexToMoveTo();
@@ -555,6 +558,8 @@ public class GamePanel extends JPanel implements Runnable
         }
 
         player.swapHands(handToShiftIndex, handToShiftIndex + splitDirection);
+
+        player.getHand(handToShiftIndex).calculateValueOfCards();
     }
 
     private void drawCardAfterSplit()
@@ -606,11 +611,11 @@ public class GamePanel extends JPanel implements Runnable
         gameState = GameState.PLAYER_CHOOSE;
     }
 
-    private void checkForPlayerBust(int index)
+    private void checkForPlayerAutoStand(int index)
     {
-        player.checkForBustInHand(index);
+        player.checkForAutoStandInHand(index);
 
-        if (player.isBustedInHand(index))
+        if (player.isAutoStandInHand(index))
         {
             if (player.isAnotherHand())
             {
@@ -623,7 +628,7 @@ public class GamePanel extends JPanel implements Runnable
         }
         else
         {
-            if (gameState == GameState.PLAYER_DOUBLE_DOWN)
+            /* if (gameState == GameState.PLAYER_DOUBLE_DOWN)
             {
                 if (player.isAnotherHand())
                 {
@@ -635,9 +640,9 @@ public class GamePanel extends JPanel implements Runnable
                 }
             }
             else
-            {
+            { */
                 gameState = GameState.PLAYER_CHOOSE;
-            }
+            /* } */
         }
     }
 
@@ -645,11 +650,13 @@ public class GamePanel extends JPanel implements Runnable
     {
         if (!animator.isPlaying())
         {
-            revealFaceDownCard();
+            revealFaceDownCard(); // hasRevealedFaceDownCard
             
-            if (dealerHand.getValueOfCards() < 17 && !player.isBlackjackOrBustedInAllHands())
+            dealer.getHand().calculateValueOfCards();
+
+            if (dealer.getHand().getValueOfCards() < 17 && !player.isBlackjackOrBustedInAllHands())
             {
-                drawCard(dealerHand, getNextDealerCardPosition(), false, false);
+                drawCard(dealer.getHand(), getNextDealerCardPosition(), false, false);
             }
             else
             {
@@ -661,7 +668,7 @@ public class GamePanel extends JPanel implements Runnable
     private void revealFaceDownCard()
     {
         Graphic visualCardWithFaceDownImage = graphics.get(indexOfFirstVisualCardInGraphics + 1);
-        visualCardWithFaceDownImage.setImage(dealerHand.getCard(0).getImage());
+        visualCardWithFaceDownImage.setImage(dealer.getHand().getCard(0).getImage());
     }
 
     private void endRound()
@@ -676,62 +683,61 @@ public class GamePanel extends JPanel implements Runnable
     {
         int winnings = 0;
 
-        for (int i = 0; i < player.getMaxNumberOfHands(); i++)
+        if (player.isBlackjack() && !dealer.isBlackjack())
         {
-            if (player.getHand(i).isActive())
+            winnings += player.getInitialBet() * blackjackPayRatio;
+        }
+        else
+        {
+            for (int i = 0; i < player.getMaxNumberOfHands(); i++)
             {
-                if (player.isBustedInHand(i))
+                if (player.getHand(i).isActive())
                 {
-                    winnings += 0;
-                }
-                else if (dealerHand.getValueOfCards() > 21)
-                {
-                    if (player.isBlackjackInHand(i))
+                    if (player.getHand(i).getValueOfCards() > 21)
                     {
-                        winnings += (int)(player.getInitialBet() * 2.5);
+                        winnings += 0;
                     }
-                    else if (player.isDoubledDownInHand(i))
+                    else if (dealer.getHand().getValueOfCards() > 21)
                     {
-                        winnings += (player.getInitialBet() * 2) * 2;
+                        if (player.isDoubledDownInHand(i))
+                        {
+                            winnings += (player.getInitialBet() * 2) * 2;
+                        }
+                        else
+                        {
+                            winnings += player.getInitialBet() * 2;
+                        }
+                    }
+                    else if (dealer.getHand().getValueOfCards() > player.getValueOfCardsInHand(i))
+                    {
+                        winnings += 0;
+                    }
+                    else if (player.getValueOfCardsInHand(i) == dealer.getHand().getValueOfCards())
+                    {
+                        if (player.isDoubledDownInHand(i))
+                        {
+                            winnings += player.getInitialBet() * 2;
+                        }
+                        else
+                        {
+                            winnings += player.getInitialBet();
+                        }
+                    }
+                    else if (player.getValueOfCardsInHand(i) > dealer.getHand().getValueOfCards())
+                    {
+                        if (player.isDoubledDownInHand(i))
+                        {
+                            winnings += (player.getInitialBet() * 2) * 2;
+                        }
+                        else
+                        {
+                            winnings += player.getInitialBet() * 2;
+                        }
                     }
                     else
                     {
-                        winnings += player.getInitialBet() * 2;
+                        winnings += 0;
                     }
-                }
-                else if (dealerHand.getValueOfCards() > player.getValueOfCardsInHand(i))
-                {
-                    winnings += 0;
-                }
-                else if (player.getValueOfCardsInHand(i) == dealerHand.getValueOfCards())
-                {
-                    if (player.isDoubledDownInHand(i))
-                    {
-                        winnings += player.getInitialBet() * 2;
-                    }
-                    else
-                    {
-                        winnings += player.getInitialBet();
-                    }
-                }
-                else if (player.getValueOfCardsInHand(i) > dealerHand.getValueOfCards())
-                {
-                    if (player.isBlackjackInHand(i))
-                    {
-                        winnings += (int)(player.getInitialBet() * 2.5);
-                    }
-                    else if (player.isDoubledDownInHand(i))
-                    {
-                        winnings += (player.getInitialBet() * 2) * 2;
-                    }
-                    else
-                    {
-                        winnings += player.getInitialBet() * 2;
-                    }
-                }
-                else
-                {
-                    winnings += 0;
                 }
             }
         }
@@ -757,7 +763,7 @@ public class GamePanel extends JPanel implements Runnable
             hand.moveAllCardsToDeck(usedDeck);
         }
 
-        dealerHand.moveAllCardsToDeck(usedDeck);
+        dealer.getHand().moveAllCardsToDeck(usedDeck);
 
         graphics.subList(indexOfFirstVisualCardInGraphics, graphics.size()).clear();
     }
@@ -805,9 +811,9 @@ public class GamePanel extends JPanel implements Runnable
     private void reset()
     {
         adjustPlayerBet();
-        player.reset();
 
-        dealerHand.reset();
+        player.reset();
+        dealer.reset();
         
         ((Arrow)arrow).reset();
         
@@ -849,7 +855,7 @@ public class GamePanel extends JPanel implements Runnable
                 receiveCards();
                 break;
             case PLAYER_CHOOSE:
-                checkForPlayerBlackjack(player.getCurrentHandIndex());
+                //checkForPlayerBlackjack(player.getCurrentHandIndex());
                 break;
             case PLAYER_HIT:
                 hit();
@@ -908,6 +914,16 @@ public class GamePanel extends JPanel implements Runnable
             for (int i = 0; i < player.getMaxNumberOfHands(); i++)
             {
                 g2d.setStroke(new BasicStroke(scale));
+
+                if (player.getHand(i).isActive())
+                {
+                    g2d.setColor(Color.LIGHT_GRAY);
+                }
+                else
+                {
+                    g2d.setColor(Color.DARK_GRAY);
+                } 
+                
                 g2d.drawRect(splitMarginX + (i * splitOffsetX) - (int)Math.ceil(((double)scale / 2)), playerCardStartingPos.y - (int)Math.ceil(((double)scale / 2)), cardSize.width + scale, cardSize.height + scale);
             }
         }
@@ -922,14 +938,23 @@ public class GamePanel extends JPanel implements Runnable
 
         for (Hand hand : player.getHands())
         {
-            if (hand.isActive() && hand.getNumberOfCards() > 0)
+            if (hand.isActive() && hand.getValueOfCards() > 0)
             {
                 Graphic card = graphics.get(hand.getGraphicsIndex(0));
 
                 if (!card.isAnimating())
                 {
-                    String valueText = hand.getValueOfCardsToString();
-                
+                    String valueText;
+
+                    if (player.isBlackjack())
+                    {
+                        valueText = "Blackjack!";
+                    }
+                    else
+                    {
+                        valueText = hand.getValueOfCardsToString();
+                    }
+
                     int cardX = card.getX();
                     int cardY = card.getY();
                     int cardWidth = card.getWidth();

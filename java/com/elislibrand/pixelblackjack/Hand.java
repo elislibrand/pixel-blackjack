@@ -8,10 +8,12 @@ public class Hand
     private List<Card> cards;
     private List<Integer> graphicsIndexes;
 
-    private boolean isBlackjack = false;
-    private boolean isBusted = false;
+    private int valueOfCards = 0;
+
+    private boolean isAutoStand = false;
     private boolean isDoubledDown = false;
     private boolean isActive = false;
+    private boolean isSoft = false;
 
     public Hand()
     {
@@ -86,49 +88,15 @@ public class Hand
 
     public int getValueOfCards()
     {
-        int totalValue = 0;
-        int aces = 0;
-
-        for (Card card : cards)
-        {
-            switch (card.getValue())
-            {
-                case ACE: aces += 1; break;
-                case TWO: totalValue += 2; break;
-                case THREE: totalValue += 3; break;
-                case FOUR: totalValue += 4; break;
-                case FIVE: totalValue += 5; break;
-                case SIX: totalValue += 6; break;
-                case SEVEN: totalValue += 7; break;
-                case EIGHT: totalValue += 8; break;
-                case NINE: totalValue += 9; break;
-                case TEN: totalValue += 10; break;
-                case JACK: totalValue += 10; break;
-                case QUEEN: totalValue += 10; break;
-                case KING: totalValue += 10; break;
-            }
-        }
-
-        for (int i = 0; i < aces; i++)
-        {
-            if (totalValue + (aces - 1) > 10)
-            {
-                totalValue += 1;
-            }
-            else
-            {
-                totalValue += 11;
-            }
-        }
-
-        return totalValue;
+        return valueOfCards;
     }
 
-    public String getValueOfCardsToString()
+    public void calculateValueOfCards()
     {
+        isSoft = false;
+
         int totalValue = 0;
         int aces = 0;
-        boolean isSoft = false;
 
         for (Card card : cards)
         {
@@ -159,17 +127,19 @@ public class Hand
             else
             {
                 totalValue += 11;
-
+                
                 isSoft = true;
             }
         }
 
-        if (isBlackjack)
-        {
-            return "Blackjack!";
-        }
+        valueOfCards = totalValue;
+    }
 
-        if (!isSoft || isDoubledDown)
+    public String getValueOfCardsToString()
+    {
+        int totalValue = getValueOfCards();
+        
+        if ((isSoft && totalValue == 21) || !isSoft || isDoubledDown)
         {
             return Integer.toString(totalValue);
         }
@@ -225,25 +195,15 @@ public class Hand
             return false;
         }
     }
-
-    public boolean isBlackjack()
+    
+    public boolean isAutoStand()
     {
-        return isBlackjack;
+        return isAutoStand;
     }
 
-    public void setBlackjack(boolean isBlackjack)
+    public void setAutoStand(boolean isAutoStand)
     {
-        this.isBlackjack = isBlackjack;
-    }
-
-    public boolean isBusted()
-    {
-        return isBusted;
-    }
-
-    public void setBusted(boolean isBusted)
-    {
-        this.isBusted = isBusted;
+        this.isAutoStand = isAutoStand;
     }
 
     public boolean isDoubledDown()
@@ -256,11 +216,18 @@ public class Hand
         this.isDoubledDown = isDoubledDown;
     }
 
+    public void setSoft(boolean isSoft)
+    {
+        this.isSoft = isSoft;
+    }
+
     public void reset()
     {
-        isBlackjack = false;
-        isBusted = false;
+        valueOfCards = 0;
+
+        isAutoStand = false;
         isDoubledDown = false;
+        isSoft = false;
         isActive = false;
 
         cards.clear();

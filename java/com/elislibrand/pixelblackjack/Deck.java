@@ -23,12 +23,12 @@ public class Deck
             for (Value cardValue : Value.values())
             {
                 // Include if-statement when testing splits
-                /* if (cardValue.equals(Value.TEN) || cardValue.equals(Value.JACK) || cardValue.equals(Value.QUEEN) || cardValue.equals(Value.KING))
-                { */
+                if (cardValue.equals(Value.TEN) || cardValue.equals(Value.JACK) || cardValue.equals(Value.QUEEN) || cardValue.equals(Value.KING))
+                {
                     Image cardImage = new ImageIcon(getClass().getResource("/assets/cards/" + cardValue.toString().toLowerCase() + cardSuit.toString().toLowerCase() + ".png")).getImage();
 
                     cards.add(new Card(cardImage, cardSuit, cardValue));
-                /* } */
+                }
             }
         }
     }

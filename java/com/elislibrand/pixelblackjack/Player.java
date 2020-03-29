@@ -18,6 +18,7 @@ public class Player
     private int currentHandIndex;
 
     private boolean hasPlacedBet = false;
+    private boolean isBlackjack = false;
 
     public Player()
     {
@@ -34,11 +35,6 @@ public class Player
     {
         return hands.get(index);
     }
-
-    /* public void addHand(int index, Hand hand)
-    {
-        hands.add(index, hand);
-    } */
 
     public void addHand(Hand hand)
     {
@@ -202,26 +198,34 @@ public class Player
         }
     }
 
-    public void checkForBlackjackInHand(int index) // Rename
+    public boolean isBlackjack()
     {
-        Hand hand = hands.get(index);
-
-        if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() == 2 && numberOfActiveHands == 1)
-        {
-            hand.setBlackjack(true);
-        }
+        return isBlackjack;
     }
 
-    public boolean isBlackjackInHand(int index)
+    public void setBlackjack(boolean isBlackjack)
     {
-        return hands.get(index).isBlackjack();
+        this.isBlackjack = isBlackjack;
+    }
+
+    public void checkForBlackjack()
+    {
+        if (numberOfActiveHands == 1)
+        {
+            Hand hand = hands.get(currentHandIndex);
+        
+            if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() == 2)
+            {
+                isBlackjack = true;
+            }
+        }
     }
 
     public boolean shouldAutoStandInHand(int index)
     {
         Hand hand = hands.get(index);
 
-        if (hand.getValueOfCards() == 21 && hand.getNumberOfCards() > 2)
+        if (hand.getValueOfCards() == 21)
         {
             return true;
         }
@@ -234,28 +238,33 @@ public class Player
         return hands.get(index).isDoubledDown();
     }
 
-    public void checkForBustInHand(int index)
+    public void checkForAutoStandInHand(int index)
     {
         Hand hand = hands.get(index);
 
-        if (hand.getValueOfCards() > 21)
+        if (hand.getValueOfCards() >= 21 || hand.isDoubledDown())
         {
-            hand.setBusted(true);
+            hand.setAutoStand(true);
         }
     }
 
-    public boolean isBustedInHand(int index)
+    public boolean isAutoStandInHand(int index)
     {
-        return hands.get(index).isBusted();
+        return hands.get(index).isAutoStand();
     }
 
     public boolean isBlackjackOrBustedInAllHands()
     {
+        if (isBlackjack)
+        {
+            return true;
+        }
+
         for (Hand hand : hands)
         {
             if (hand.isActive())
             {
-                if (!hand.isBlackjack() && !hand.isBusted())
+                if (hand.getValueOfCards() <= 21)
                 {
                     return false;
                 }
@@ -328,6 +337,7 @@ public class Player
         
         numberOfActiveHands = 1;
         hasPlacedBet = false;
+        isBlackjack = false;
         winnings = 0;
     }
 }
